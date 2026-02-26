@@ -1,0 +1,2 @@
+# AuraBeat
+Generative AI Music
