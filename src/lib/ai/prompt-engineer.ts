@@ -2,6 +2,11 @@ export type BuildMusicGenPromptInput = {
   rawPrompt: string;
   styleTag?: string;
   isInstrumental?: boolean;
+  lyrics?: string;
+  vocalGender?: "any" | "male" | "female" | string;
+  vocalTone?: string;
+  referenceAudioUrl?: string | null;
+  melodyAudioUrl?: string | null;
 };
 
 const STYLE_PROMPT_MAP: Record<string, string> = {
@@ -25,12 +30,12 @@ const STYLE_PROMPT_MAP: Record<string, string> = {
     "smooth R&B chords, warm bass, soft drums, soulful melody, intimate late-night groove",
 };
 
-function sanitizePrompt(input: string): string {
+function sanitizePrompt(input: string, maxLen = 300): string {
   return input
     .replace(/[<>]/g, "")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 300);
+    .slice(0, maxLen);
 }
 
 function getStyleDescription(styleTag?: string): string {
@@ -57,8 +62,15 @@ export function buildMusicGenPrompt({
   rawPrompt,
   styleTag,
   isInstrumental = false,
+  lyrics,
+  vocalGender,
+  vocalTone,
+  referenceAudioUrl,
+  melodyAudioUrl,
 }: BuildMusicGenPromptInput): string {
-  const cleanUserPrompt = sanitizePrompt(rawPrompt);
+  const cleanUserPrompt = sanitizePrompt(rawPrompt, 320);
+  const cleanLyrics = sanitizePrompt(lyrics ?? "", 260);
+  const cleanTone = sanitizePrompt(vocalTone ?? "", 60);
 
   const userIdea =
     cleanUserPrompt.length > 0
@@ -71,6 +83,28 @@ export function buildMusicGenPrompt({
     ? "instrumental only, no vocals, no singing, no spoken words"
     : "suitable for vocals or melodic lead lines, clear song-like structure";
 
+  const normalizedGender = vocalGender?.toLowerCase();
+  const genderDirective =
+    !isInstrumental && normalizedGender && normalizedGender !== "any"
+      ? `vocal character: ${normalizedGender} voice`
+      : "";
+
+  const toneDirective = !isInstrumental && cleanTone
+    ? `vocal tone: ${cleanTone}`
+    : "";
+
+  const lyricDirective = !isInstrumental && cleanLyrics
+    ? `lyric guide: ${cleanLyrics}`
+    : "";
+
+  const referenceDirective = referenceAudioUrl
+    ? "reference audio provided for timbre guidance"
+    : "";
+
+  const melodyDirective = melodyAudioUrl
+    ? "melody idea provided for structural guidance"
+    : "";
+
   const structureDirective =
     "short complete track, intro, main section, subtle variation, clean ending";
 
@@ -81,7 +115,14 @@ export function buildMusicGenPrompt({
     userIdea,
     styleDescription,
     vocalDirective,
+    genderDirective,
+    toneDirective,
+    lyricDirective,
+    referenceDirective,
+    melodyDirective,
     structureDirective,
     qualityDirective,
-  ].join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
 }

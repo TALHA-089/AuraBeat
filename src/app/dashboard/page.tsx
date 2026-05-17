@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Play } from "lucide-react";
+import { Music, Play, Sparkles, ArrowRight } from "lucide-react";
 
 type ProfileRow = {
   gold_balance: number | null;
@@ -62,93 +62,118 @@ export default async function DashboardPage() {
     .eq("user_id", user.id);
 
   const displayName = profile.display_name?.trim() || "Creator";
-  const goldBalance = profile.gold_balance ?? 0;
-  const plan = profile.plan?.trim() || "Free";
   const totalTracks = tracksCount ?? (recentTracks?.length ?? 0);
 
   return (
     <AppLayout>
-      <div className="p-6 text-white">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {displayName}!
-          </h1>
-
-          <Link
-            href="/create"
-            className="inline-flex items-center justify-center rounded-xl bg-[#7C3AED] px-5 py-3 font-semibold text-white transition-opacity hover:opacity-95"
-          >
-            Create Music
-          </Link>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-[#7C3AED]/30 bg-[#111128] p-6">
-            <div className="text-sm text-white/70">Gold Balance</div>
-            <div className="mt-2 text-3xl font-bold">
-              {goldBalance} <span className="text-2xl">🪙</span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#7C3AED]/30 bg-[#111128] p-6">
-            <div className="text-sm text-white/70">Plan</div>
-            <div className="mt-2 text-3xl font-bold">
-              {plan} <span className="text-2xl">⭐</span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#7C3AED]/30 bg-[#111128] p-6">
-            <div className="text-sm text-white/70">Tracks Created</div>
-            <div className="mt-2 text-3xl font-bold">
-              {totalTracks} <span className="text-2xl">🎵</span>
-            </div>
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        {/* Hero Banner */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#7C3AED]/20 via-[#4F46E5]/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D1A] via-transparent to-transparent" />
+          <div className="relative px-8 pt-12 pb-10">
+            <p className="text-sm text-[#A1A1AA] mb-2 tracking-wider uppercase">Welcome back</p>
+            <h1 className="text-4xl font-bold tracking-tight mb-3">
+              {displayName}
+            </h1>
+            <p className="text-[#A1A1AA] text-sm max-w-md mb-6">
+              Your AI music studio is ready. You have created {totalTracks} track{totalTracks !== 1 ? "s" : ""} so far.
+            </p>
+            <Link
+              href="/create"
+              className="group relative overflow-hidden inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] px-6 py-3 font-semibold text-white shadow-[0_0_20px_-5px_rgba(124,58,237,0.4)] hover:shadow-[0_0_30px_-5px_rgba(124,58,237,0.6)] transition-all duration-300 no-underline"
+            >
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
+              <Sparkles className="w-5 h-5 mr-2" />
+              Create New Track
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+            </Link>
           </div>
         </div>
 
-        <div className="mt-10">
-          <h2 className="text-xl font-semibold">Recent Tracks</h2>
+        <div className="px-8 pb-20 space-y-8">
+          {/* Quick Stats Row — minimal, non-intrusive */}
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2 text-[#A1A1AA]">
+              <Music className="w-4 h-4 text-[#7C3AED]" />
+              <span className="font-medium text-white">{totalTracks}</span> tracks created
+            </div>
+            <div className="w-px h-4 bg-[#1E1E3A]" />
+            <div className="flex items-center gap-2 text-[#A1A1AA]">
+              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span className="font-medium text-yellow-500">{(profile.gold_balance ?? 0).toLocaleString()}</span> Gold
+            </div>
+            <div className="w-px h-4 bg-[#1E1E3A]" />
+            <div className="flex items-center gap-2 text-[#A1A1AA]">
+              <span className="text-xs capitalize bg-[#1E1E3A] px-2 py-0.5 rounded-md text-white/80">{profile.plan?.trim() || "Free"}</span> plan
+            </div>
+          </div>
 
-          <div className="mt-4 rounded-xl border border-white/10 bg-[#111128]">
-            {recentTracks && recentTracks.length > 0 ? (
-              <ul className="divide-y divide-white/10">
-                {recentTracks.map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between gap-4 px-5 py-4"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold text-white">
-                        {t.title?.trim() ? t.title : "Untitled Track"}
-                      </div>
-                      <div className="mt-1 text-sm text-white/60">
-                        {formatDate(t.created_at)}
-                      </div>
-                    </div>
+          {/* Recent Tracks */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold tracking-tight">Recent Tracks</h2>
+              <Link href="/library" className="text-sm text-[#A1A1AA] hover:text-white transition-colors duration-200 flex items-center gap-1 no-underline">
+                View all <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
 
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
-                      aria-label="Play track"
+            <div className="bg-[#111128] border border-[#1E1E3A] rounded-xl overflow-hidden">
+              {recentTracks && recentTracks.length > 0 ? (
+                <ul className="divide-y divide-[#1E1E3A]">
+                  {recentTracks.map((t, index) => (
+                    <li
+                      key={t.id}
+                      className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors duration-200 group"
                     >
-                      <Play className="h-4 w-4" />
-                      Play
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="px-5 py-6 text-white/70">
-                No tracks yet — hit{" "}
-                <Link href="/create" className="font-semibold text-[#7C3AED]">
-                  Create Music
-                </Link>{" "}
-                to make your first one!
-              </div>
-            )}
-          </div>
+                      {/* Track number */}
+                      <span className="w-6 text-right text-sm text-[#A1A1AA] tabular-nums group-hover:hidden">
+                        {index + 1}
+                      </span>
+                      <button
+                        type="button"
+                        className="w-6 hidden group-hover:flex items-center justify-center text-white"
+                        aria-label={`Play ${t.title || "Untitled Track"}`}
+                      >
+                        <Play className="w-4 h-4 fill-current" />
+                      </button>
+
+                      {/* Track info */}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-white truncate block">
+                          {t.title?.trim() || "Untitled Track"}
+                        </span>
+                      </div>
+
+                      {/* Metadata */}
+                      <span className="text-xs text-[#A1A1AA] tabular-nums">
+                        {formatDate(t.created_at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="px-6 py-12 text-center">
+                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <Music className="w-7 h-7 text-[#A1A1AA]" />
+                  </div>
+                  <h3 className="font-medium text-white mb-1">No tracks yet</h3>
+                  <p className="text-sm text-[#A1A1AA] mb-4">
+                    Create your first AI-generated track to get started.
+                  </p>
+                  <Link
+                    href="/create"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-colors duration-200 no-underline"
+                  >
+                    <Music className="w-4 h-4" />
+                    Create Music
+                  </Link>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </AppLayout>
   );
 }
-

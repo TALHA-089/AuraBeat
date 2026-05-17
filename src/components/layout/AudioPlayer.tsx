@@ -1,11 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import {
+  Download,
+  Pause,
+  Play,
+  Repeat,
+  Share2,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  Music,
+} from "lucide-react";
 import { useAudioStore } from "@/lib/store/audioStore";
+import { useToastStore } from "@/lib/store/toastStore";
+import { downloadAudioFromUrl } from "@/lib/audio/download";
 
 function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds)) return "0:00";
+  if (!Number.isFinite(seconds) || isNaN(seconds)) return "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -13,12 +26,27 @@ function formatTime(seconds: number) {
 
 export function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const { currentTrack, isPlaying, togglePlay, pause } = useAudioStore();
+  const addToast = useToastStore((state) => state.addToast);
+  const {
+    currentTrack,
+    isPlaying,
+    shuffle,
+    repeat,
+    volume,
+    togglePlay,
+    pause,
+    playNext,
+    playPrev,
+    toggleShuffle,
+    toggleRepeat,
+    setVolume,
+  } = useAudioStore();
 
-  // Load new track when currentTrack changes
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
@@ -26,9 +54,9 @@ export function AudioPlayer() {
     audio.src = currentTrack.audioUrl;
     audio.load();
     setCurrentTime(0);
+    setDuration(0);
   }, [currentTrack]);
 
-  // Play/pause when isPlaying changes
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
@@ -42,12 +70,94 @@ export function AudioPlayer() {
     }
   }, [isPlaying, currentTrack, pause]);
 
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  useEffect(() => {
+    function handleMouseUp() {
+      if (isDragging) setIsDragging(false);
+    }
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, [isDragging]);
+
   const title = currentTrack ? currentTrack.title : "No track selected";
   const canPlay = Boolean(currentTrack?.audioUrl);
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  function handleProgressBarClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!audioRef.current || !canPlay) return;
+    const rect = progressBarRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const percent = (e.clientX - rect.left) / rect.width;
+    const newTime = Math.max(0, Math.min(percent * duration, duration));
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  }
+
+  function handleProgressDrag(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isDragging || !audioRef.current || !canPlay) return;
+    const rect = progressBarRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const percent = (e.clientX - rect.left) / rect.width;
+    const newTime = Math.max(0, Math.min(percent * duration, duration));
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  }
+
+  async function handleDownload() {
+    if (!currentTrack?.audioUrl) return;
+    try {
+      await downloadAudioFromUrl(currentTrack.audioUrl, currentTrack.title, "mp3");
+      addToast({
+        variant: "success",
+        title: "Download started",
+        message: `Downloading ${currentTrack.title}.`,
+      });
+    } catch {
+      addToast({
+        variant: "error",
+        title: "Download failed",
+        message: "Could not download this track.",
+      });
+    }
+  }
+
+  async function handleShare() {
+    if (!currentTrack?.audioUrl) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: currentTrack.title,
+          url: currentTrack.audioUrl,
+        });
+        return;
+      } catch {
+        // fall through to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentTrack.audioUrl);
+      addToast({
+        variant: "success",
+        title: "Link copied",
+        message: "Track link copied to clipboard.",
+      });
+    } catch {
+      addToast({
+        variant: "error",
+        title: "Share failed",
+        message: "Could not copy the track link.",
+      });
+    }
+  }
+
   return (
-    <div className="fixed bottom-0 left-0 z-50 h-[70px] w-full border-t border-[#1e1e3a] bg-[#111128]">
+    <div className="h-[72px] bg-[#0C0C1B] border-t border-[#1E1E3A] flex items-center justify-between px-5 z-50 shrink-0 select-none">
       <audio
         ref={audioRef}
         className="hidden"
@@ -63,41 +173,151 @@ export function AudioPlayer() {
           }
         }}
         onEnded={() => {
-          pause();
+          if (repeat === "one") {
+            audioRef.current?.play().catch(() => {
+              pause();
+            });
+            return;
+          }
+          setCurrentTime(0);
+          playNext();
         }}
       />
 
-      <div className="mx-auto flex h-full max-w-6xl items-center gap-4 px-4">
-        <button
-          type="button"
-          onClick={() => canPlay && togglePlay()}
-          disabled={!canPlay}
-          aria-label={isPlaying ? "Pause" : "Play"}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#7C3AED] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPlaying ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Play className="h-5 w-5" />
-          )}
-        </button>
+      {/* Left — Track info */}
+      <div className="flex items-center gap-4 w-[30%] min-w-[180px]">
+        <div className="w-11 h-11 rounded-md bg-[#1A1A2E] flex items-center justify-center shrink-0 border border-[#1E1E3A]">
+          <Music className="w-5 h-5 text-[#A1A1AA]" />
+        </div>
+        <div className="min-w-0 flex flex-col justify-center">
+          <h4 className="text-[14px] font-medium truncate text-white hover:underline cursor-pointer">
+            {title}
+          </h4>
+          <p className="text-[11px] text-white/50 truncate hover:underline cursor-pointer mt-0.5">
+            {currentTrack ? "AuraBeat AI" : "—"}
+          </p>
+        </div>
+      </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-white">{title}</div>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="shrink-0 text-xs text-white/60">
-              {formatTime(currentTime)}
-            </span>
-            <div className="h-2 w-full rounded-full bg-white/10">
+      {/* Center — Controls + Progress */}
+      <div className="flex flex-col items-center justify-center w-[40%] max-w-[722px] px-4">
+        <div className="flex items-center gap-6 mb-2">
+          <button
+            type="button"
+            onClick={toggleShuffle}
+            className={`transition-colors ${shuffle ? "text-[#7C3AED]" : "text-white/40 hover:text-white"
+              }`}
+            aria-label="Shuffle"
+          >
+            <Shuffle className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={playPrev}
+            className="text-white/40 hover:text-white transition-colors"
+            aria-label="Previous"
+          >
+            <SkipBack className="w-5 h-5 fill-current" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => canPlay && togglePlay()}
+            disabled={!canPlay}
+            className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? (
+              <Pause className="w-4 h-4 fill-current" />
+            ) : (
+              <Play className="w-4 h-4 ml-1 fill-current" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={playNext}
+            className="text-white/40 hover:text-white transition-colors"
+            aria-label="Next"
+          >
+            <SkipForward className="w-5 h-5 fill-current" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleRepeat}
+            className={`transition-colors ${repeat === "off" ? "text-white/40 hover:text-white" : "text-[#7C3AED]"
+              }`}
+            aria-label="Repeat"
+          >
+            <Repeat className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full flex items-center gap-2">
+          <span className="text-[11px] text-white/50 w-10 text-right tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+
+          <div
+            className="flex-1 h-3 flex items-center cursor-pointer group relative"
+            onClick={handleProgressBarClick}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseMove={handleProgressDrag}
+            onMouseUp={() => setIsDragging(false)}
+            onMouseLeave={() => setIsDragging(false)}
+            ref={progressBarRef}
+          >
+            <div className="w-full h-1 bg-white/10 rounded-full relative overflow-hidden group-hover:h-1.5 transition-all">
               <div
-                className="h-full rounded-full bg-[#7C3AED] transition-[width] duration-150 ease-linear"
+                className="absolute left-0 top-0 bottom-0 bg-white group-hover:bg-[#7C3AED] transition-colors rounded-full"
                 style={{ width: `${canPlay ? progressPct : 0}%` }}
               />
             </div>
-            <span className="shrink-0 text-xs text-white/60">
-              {formatTime(duration)}
-            </span>
+            {/* Knob */}
+            <div
+              className="absolute w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none"
+              style={{ left: `calc(${canPlay ? progressPct : 0}% - 6px)` }}
+            />
           </div>
+
+          <span className="text-[11px] text-white/50 w-10 text-left tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
+      </div>
+
+      {/* Right — Volume & actions */}
+      <div className="flex items-center justify-end gap-4 w-[30%] min-w-[180px]">
+        <button
+          type="button"
+          onClick={handleDownload}
+          className="text-white/50 hover:text-white transition-colors"
+          aria-label="Download"
+          disabled={!canPlay}
+        >
+          <Download className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="text-white/50 hover:text-white transition-colors"
+          aria-label="Share"
+          disabled={!canPlay}
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-2 ml-2">
+          <Volume2 className="w-4 h-4 text-white/50 hover:text-white transition-colors cursor-pointer" />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(volume * 100)}
+            onChange={(event) => setVolume(Number(event.target.value) / 100)}
+            className="w-24 accent-[#7C3AED]"
+            aria-label="Volume"
+          />
         </div>
       </div>
     </div>

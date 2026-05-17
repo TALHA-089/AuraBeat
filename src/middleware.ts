@@ -43,6 +43,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/api") || pathname.startsWith("/v1")) {
+    return response;
+  }
   const isPublic = PUBLIC_PATHS.has(pathname);
 
   if (!user && !isPublic) {

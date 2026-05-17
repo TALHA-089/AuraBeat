@@ -90,12 +90,14 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold tracking-tight">
-        Set a new password
-      </h1>
-      <p className="mt-1 text-sm text-white/60">
-        Choose a strong password for your Aurabeat account.
-      </p>
+      <div className="text-center mb-2">
+        <h1 className="text-2xl font-bold tracking-tight">
+          Set a new password
+        </h1>
+        <p className="mt-1 text-sm text-white/50">
+          Choose a strong password for your Aurabeat account.
+        </p>
+      </div>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         {/* New Password */}
@@ -135,7 +137,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="group relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] px-4 py-3 font-semibold text-white shadow-[0_0_30px_-10px_rgba(124,58,237,0.4)] hover:shadow-[0_0_40px_-10px_rgba(124,58,237,0.6)] transition-all disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <>

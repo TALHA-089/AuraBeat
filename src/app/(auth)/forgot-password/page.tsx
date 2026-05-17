@@ -75,12 +75,14 @@ export default function ForgotPasswordPage() {
         </>
       ) : (
         <>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Forgot your password?
-          </h1>
-          <p className="mt-1 text-sm text-white/60">
-            Enter your email and we&apos;ll send you a reset link.
-          </p>
+          <div className="text-center mb-2">
+            <h1 className="text-2xl font-bold tracking-tight">
+              Forgot your password?
+            </h1>
+            <p className="mt-1 text-sm text-white/50">
+              Enter your email and we&apos;ll send you a reset link.
+            </p>
+          </div>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
@@ -99,7 +101,7 @@ export default function ForgotPasswordPage() {
                 autoComplete="email"
                 required
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED]"
+                className="w-full rounded-xl border border-white/10 bg-[#0D0D1A] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
               />
             </div>
 
@@ -112,7 +114,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] px-4 py-3 font-semibold text-white shadow-[0_0_30px_-10px_rgba(124,58,237,0.4)] hover:shadow-[0_0_40px_-10px_rgba(124,58,237,0.6)] transition-all disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>

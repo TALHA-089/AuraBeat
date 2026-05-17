@@ -45,7 +45,7 @@ export function PasswordInput({
             "w-full rounded-xl border bg-[#0D0D1A] px-4 py-3 pr-11 text-sm text-white outline-none transition-colors placeholder:text-white/35",
             error
               ? "border-red-500/50 focus:border-red-500"
-              : "border-[#1e1e3a] focus:border-[#7C3AED]",
+              : "border-white/10 focus:border-[#7C3AED]",
           ].join(" ")}
         />
 

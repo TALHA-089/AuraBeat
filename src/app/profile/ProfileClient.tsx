@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   Calendar,
+  Check,
   Coins,
-  Crown,
   LogOut,
   Mail,
   Save,
+  Star,
   User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -27,33 +28,6 @@ type ProfileClientProps = {
   profile: UserProfile;
   email: string;
 };
-
-const PLAN_CARDS = [
-  {
-    name: "Free",
-    price: "$0",
-    gold: "50 Gold",
-    description: "Starter access for basic music generation.",
-  },
-  {
-    name: "Basic",
-    price: "$9.99",
-    gold: "500 Gold",
-    description: "More credits for regular creators.",
-  },
-  {
-    name: "Pro",
-    price: "$24.99",
-    gold: "2,000 Gold",
-    description: "Higher limits for serious creators.",
-  },
-  {
-    name: "Premier",
-    price: "$49.99",
-    gold: "5,000 Gold",
-    description: "Maximum display tier for the MVP demo.",
-  },
-];
 
 function formatDate(value: string | null) {
   if (!value) return "Unknown date";
@@ -80,9 +54,75 @@ export function ProfileClient({ profile, email }: ProfileClientProps) {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [annual, setAnnual] = useState(true);
 
-  const currentPlan = useMemo(() => normalizePlan(profile.plan), [profile.plan]);
+  const currentPlan = useMemo(
+    () => normalizePlan(profile.plan),
+    [profile.plan],
+  );
   const goldBalance = profile.gold_balance ?? 0;
+
+  const tiers = useMemo(
+    () => [
+      {
+        name: "Free",
+        price: 0,
+        gold: "50 Gold / Month",
+        features: [
+          "Standard quality downloads (MP3)",
+          "Basic vocal models",
+          "Public library access",
+          "Standard generation speed",
+        ],
+      },
+      {
+        name: "Basic",
+        price: annual ? 8 : 10,
+        gold: "500 Gold / Month",
+        features: [
+          "High quality downloads (WAV)",
+          "Advanced vocal models",
+          "Private library access",
+          "Fast generation speed",
+        ],
+      },
+      {
+        name: "Pro",
+        price: annual ? 24 : 30,
+        gold: "2,000 Gold / Month",
+        popular: true,
+        features: [
+          "Lossless downloads (FLAC)",
+          "Custom voice cloning (1 slot)",
+          "Stem separation tools",
+          "Priority generation speed",
+        ],
+      },
+      {
+        name: "Premier",
+        price: annual ? 64 : 80,
+        gold: "10,000 Gold / Month",
+        features: [
+          "All Pro features",
+          "Custom voice cloning (5 slots)",
+          "Full API Access",
+          "Commercial use license",
+        ],
+      },
+      {
+        name: "Enterprise",
+        price: "Custom" as const,
+        gold: "Unlimited Gold",
+        features: [
+          "All Premier features",
+          "Dedicated account manager",
+          "Custom SLA & compliance",
+          "White-label API solutions",
+        ],
+      },
+    ],
+    [annual],
+  );
 
   async function handleSave() {
     const cleanName = displayName.trim();
@@ -160,34 +200,35 @@ export function ProfileClient({ profile, email }: ProfileClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0D1A] p-6 pb-24 text-white">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="mt-1 text-sm text-white/60">
-          Manage your AuraBeat account and plan.
-        </p>
-      </div>
-
-      {message ? (
-        <div
-          className={[
-            "mb-5 rounded-xl border px-4 py-3 text-sm",
-            message.type === "success"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-              : "border-red-500/30 bg-red-500/10 text-red-200",
-          ].join(" ")}
-        >
-          {message.text}
+    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div className="max-w-6xl mx-auto space-y-10">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+          <p className="mt-1 text-sm text-white/50">
+            Manage your AuraBeat account and plan.
+          </p>
         </div>
-      ) : null}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
-        <section className="rounded-2xl border border-[#1e1e3a] bg-[#111128] p-6 shadow-lg shadow-black/10">
-          <div className="flex items-center gap-4">
+        {message ? (
+          <div
+            className={[
+              "rounded-xl border px-4 py-3 text-sm",
+              message.type === "success"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                : "border-red-500/30 bg-red-500/10 text-red-200",
+            ].join(" ")}
+          >
+            {message.text}
+          </div>
+        ) : null}
+
+        {/* Account Section */}
+        <section className="rounded-2xl border border-white/5 bg-[#1A1A2E] p-6 shadow-lg">
+          <div className="flex items-center gap-4 mb-8">
             <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#7C3AED]/20 text-[#C4B5FD]">
               <User className="h-8 w-8" />
             </div>
-
             <div>
               <h2 className="text-xl font-semibold">
                 {profile.display_name || "AuraBeat User"}
@@ -196,7 +237,7 @@ export function ProfileClient({ profile, email }: ProfileClientProps) {
             </div>
           </div>
 
-          <div className="mt-8 space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="mb-2 block text-sm font-semibold text-white/80">
                 Display Name
@@ -204,135 +245,208 @@ export function ProfileClient({ profile, email }: ProfileClientProps) {
               <input
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                className="h-12 w-full rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] px-4 text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED]"
+                className="h-12 w-full rounded-xl border border-white/10 bg-[#0D0D1A] px-4 text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED]"
                 placeholder="Enter your display name"
               />
             </div>
-
             <div>
               <label className="mb-2 block text-sm font-semibold text-white/80">
                 Email
               </label>
-              <div className="flex h-12 items-center gap-3 rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] px-4 text-white/60">
+              <div className="flex h-12 items-center gap-3 rounded-xl border border-white/10 bg-[#0D0D1A] px-4 text-white/60">
                 <Mail className="h-4 w-4" />
                 {email}
               </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] p-4">
-                <div className="flex items-center gap-2 text-sm text-white/50">
-                  <BadgeCheck className="h-4 w-4 text-[#A78BFA]" />
-                  Plan
-                </div>
-                <div className="mt-2 capitalize text-lg font-semibold">
-                  {currentPlan}
-                </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-6">
+            <div className="rounded-xl border border-white/5 bg-[#0D0D1A] p-4">
+              <div className="flex items-center gap-2 text-sm text-white/50">
+                <BadgeCheck className="h-4 w-4 text-[#A78BFA]" />
+                Plan
               </div>
-
-              <div className="rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] p-4">
-                <div className="flex items-center gap-2 text-sm text-white/50">
-                  <Coins className="h-4 w-4 text-yellow-300" />
-                  Gold Balance
-                </div>
-                <div className="mt-2 text-lg font-semibold">
-                  {goldBalance} Gold
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] p-4">
-                <div className="flex items-center gap-2 text-sm text-white/50">
-                  <Calendar className="h-4 w-4 text-[#A78BFA]" />
-                  Member Since
-                </div>
-                <div className="mt-2 text-lg font-semibold">
-                  {formatDate(profile.created_at)}
-                </div>
+              <div className="mt-2 capitalize text-lg font-semibold">
+                {currentPlan}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Save className="h-4 w-4" />
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <LogOut className="h-4 w-4" />
-                {signingOut ? "Signing out..." : "Sign Out"}
-              </button>
+            <div className="rounded-xl border border-white/5 bg-[#0D0D1A] p-4">
+              <div className="flex items-center gap-2 text-sm text-white/50">
+                <Coins className="h-4 w-4 text-yellow-300" />
+                Gold Balance
+              </div>
+              <div className="mt-2 text-lg font-semibold text-yellow-500">
+                {goldBalance} Gold
+              </div>
             </div>
+
+            <div className="rounded-xl border border-white/5 bg-[#0D0D1A] p-4">
+              <div className="flex items-center gap-2 text-sm text-white/50">
+                <Calendar className="h-4 w-4 text-[#A78BFA]" />
+                Member Since
+              </div>
+              <div className="mt-2 text-lg font-semibold">
+                {formatDate(profile.created_at)}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <LogOut className="h-4 w-4" />
+              {signingOut ? "Signing out..." : "Sign Out"}
+            </button>
           </div>
         </section>
 
-        <aside className="rounded-2xl border border-[#1e1e3a] bg-[#111128] p-6 shadow-lg shadow-black/10">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#7C3AED]/20 text-[#C4B5FD]">
-              <Crown className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold">Plans</h2>
-              <p className="text-xs text-white/50">Display-only for MVP demo.</p>
+        {/* ═══ Plans Section (Figma-style 5-tier pricing) ═══ */}
+        <section>
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">
+              Choose your rhythm
+            </h2>
+            <p className="text-white/50 max-w-xl mx-auto mb-6">
+              Upgrade your plan to unlock more generation credits, advanced
+              models, and high-resolution stem downloads.
+            </p>
+
+            {/* Annual / Monthly toggle */}
+            <div className="inline-flex items-center gap-4 bg-[#1A1A2E] p-2 rounded-full border border-white/5">
+              <span
+                className={`text-sm font-medium ${
+                  !annual ? "text-white" : "text-white/50"
+                }`}
+              >
+                Monthly
+              </span>
+              <button
+                type="button"
+                onClick={() => setAnnual(!annual)}
+                className={`w-14 h-7 rounded-full transition-colors relative ${
+                  annual ? "bg-[#7C3AED]" : "bg-white/10"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white absolute top-1 transition-transform ${
+                    annual ? "translate-x-8" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span
+                className={`text-sm font-medium flex items-center gap-1.5 ${
+                  annual ? "text-white" : "text-white/50"
+                }`}
+              >
+                Annually
+                <span className="bg-green-500/20 text-green-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                  Save 20%
+                </span>
+              </span>
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
-            {PLAN_CARDS.map((plan) => {
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {tiers.map((tier) => {
               const isCurrent =
-                plan.name.toLowerCase() === currentPlan.toLowerCase();
+                tier.name.toLowerCase() === currentPlan.toLowerCase();
 
               return (
                 <div
-                  key={plan.name}
+                  key={tier.name}
                   className={[
-                    "rounded-xl border p-4",
-                    isCurrent
-                      ? "border-[#7C3AED] bg-[#7C3AED]/15"
-                      : "border-[#1e1e3a] bg-[#0D0D1A]",
+                    "relative flex flex-col bg-[#1A1A2E] rounded-2xl border transition-transform hover:-translate-y-1",
+                    tier.popular
+                      ? "border-[#7C3AED] shadow-[0_0_30px_-10px_rgba(124,58,237,0.3)] scale-105 z-10"
+                      : "border-white/5 hover:border-white/20",
                   ].join(" ")}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">{plan.name}</div>
-                      <div className="mt-1 text-xs text-white/50">
-                        {plan.gold}
-                      </div>
+                  {tier.popular && (
+                    <div className="absolute -top-3 left-0 right-0 flex justify-center">
+                      <span className="bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-white" /> Most Popular
+                      </span>
                     </div>
+                  )}
 
-                    <div className="text-sm font-bold text-[#C4B5FD]">
-                      {plan.price}
+                  <div className="p-5 border-b border-white/5">
+                    <h3 className="text-lg font-bold mb-2">{tier.name}</h3>
+                    <div className="flex items-baseline gap-1 mb-3">
+                      {typeof tier.price === "number" ? (
+                        <>
+                          <span className="text-2xl font-bold">
+                            ${tier.price}
+                          </span>
+                          <span className="text-xs text-white/50">/ mo</span>
+                        </>
+                      ) : (
+                        <span className="text-2xl font-bold">
+                          {tier.price}
+                        </span>
+                      )}
+                    </div>
+                    <div className="bg-[#0D0D1A] py-1.5 px-2 rounded-lg border border-white/5 text-center text-xs font-semibold text-yellow-500 flex items-center justify-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                      {tier.gold}
                     </div>
                   </div>
 
-                  <p className="mt-3 text-xs leading-5 text-white/55">
-                    {plan.description}
-                  </p>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <ul className="space-y-3 flex-1 mb-6">
+                      {tier.features.map((feature, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-xs text-white/70"
+                        >
+                          <Check className="w-3.5 h-3.5 text-[#7C3AED] shrink-0 mt-0.5" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-                  {isCurrent ? (
-                    <div className="mt-3 inline-flex rounded-full bg-[#7C3AED] px-2.5 py-1 text-xs font-semibold text-white">
-                      Current Plan
-                    </div>
-                  ) : null}
+                    <button
+                      type="button"
+                      className={[
+                        "w-full py-2.5 rounded-lg text-sm font-bold transition-all",
+                        isCurrent
+                          ? "bg-[#7C3AED]/20 text-[#7C3AED] border border-[#7C3AED]/30 cursor-default"
+                          : tier.popular
+                            ? "bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] text-white hover:shadow-[0_0_20px_-5px_rgba(124,58,237,0.5)]"
+                            : "bg-white/5 text-white hover:bg-white/10 border border-white/10",
+                      ].join(" ")}
+                    >
+                      {isCurrent
+                        ? "Current Plan"
+                        : tier.name === "Enterprise"
+                          ? "Contact Sales"
+                          : "Upgrade"}
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          <p className="mt-5 text-xs leading-5 text-white/40">
+          <p className="text-center mt-6 text-xs text-white/40">
             Payments are intentionally not implemented in the free-tier MVP.
             Subscription tiers are shown for academic UI coverage only.
           </p>
-        </aside>
+        </section>
       </div>
     </div>
   );

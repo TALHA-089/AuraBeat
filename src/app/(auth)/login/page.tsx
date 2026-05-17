@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogIn } from "lucide-react";
+import { LogIn, Music } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -72,15 +72,17 @@ export default function LoginPage() {
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-      <p className="mt-1 text-sm text-white/60">
-        Sign in to continue to Aurabeat.
-      </p>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+        <p className="mt-1 text-sm text-white/50">
+          Sign in to continue to Aurabeat.
+        </p>
+      </div>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         {/* Email */}
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
+          <label htmlFor="email" className="mb-1 block text-sm font-medium text-white/80">
             Email
           </label>
           <input
@@ -92,7 +94,7 @@ export default function LoginPage() {
             autoComplete="email"
             required
             placeholder="you@example.com"
-            className="w-full rounded-xl border border-[#1e1e3a] bg-[#0D0D1A] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED]"
+            className="w-full rounded-xl border border-white/10 bg-[#0D0D1A] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
           />
         </div>
 
@@ -124,9 +126,6 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </div>
-        <p className="!mt-1 text-xs text-white/35">
-          Keeps your email remembered on this device.
-        </p>
 
         {/* Error */}
         {error ? (
@@ -139,8 +138,9 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="group relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] px-4 py-3 font-semibold text-white shadow-[0_0_30px_-10px_rgba(124,58,237,0.4)] hover:shadow-[0_0_40px_-10px_rgba(124,58,237,0.6)] transition-all disabled:cursor-not-allowed disabled:opacity-60"
         >
+          <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
           {isSubmitting ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -155,13 +155,23 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {/* Register link */}
-      <div className="mt-6 text-center text-sm text-white/60">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="font-semibold text-[#7C3AED]">
-          Create account
-        </Link>
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="h-px flex-1 bg-white/10" />
+        <span className="text-xs text-white/30 uppercase tracking-wider">
+          New to Aurabeat?
+        </span>
+        <div className="h-px flex-1 bg-white/10" />
       </div>
+
+      {/* Register link */}
+      <Link
+        href="/register"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors no-underline"
+      >
+        <Music className="h-4 w-4 text-[#7C3AED]" />
+        Create Account
+      </Link>
     </AuthShell>
   );
 }
