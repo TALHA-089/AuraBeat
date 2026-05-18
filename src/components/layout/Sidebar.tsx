@@ -40,13 +40,27 @@ export function Sidebar() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
+      
+      // Try fetching with is_admin first, fallback to just gold_balance if column doesn't exist
       supabase
         .from("profiles")
         .select("gold_balance, is_admin")
         .eq("id", user.id)
         .maybeSingle<{ gold_balance: number | null; is_admin: boolean | null }>()
-        .then(({ data }) => {
-          if (data) {
+        .then(async ({ data, error }) => {
+          if (error && error.code === "PGRST100") {
+            // Column doesn't exist, fetch without is_admin
+            const { data: fallbackData } = await supabase
+              .from("profiles")
+              .select("gold_balance")
+              .eq("id", user.id)
+              .maybeSingle<{ gold_balance: number | null }>();
+            
+            if (fallbackData) {
+              setGold(fallbackData.gold_balance ?? 0);
+              setIsAdmin(false);
+            }
+          } else if (data) {
             setGold(data.gold_balance ?? 0);
             setIsAdmin(data.is_admin ?? false);
           }
