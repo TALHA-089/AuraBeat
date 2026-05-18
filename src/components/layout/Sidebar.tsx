@@ -12,6 +12,7 @@ import {
   Library,
   Mic,
   Music,
+  Settings,
   Shield,
   SlidersHorizontal,
   User,
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/api-platform", label: "API Platform", icon: Code },
   { href: "/profile", label: "Profile", icon: User },
   { href: "/subscription-billing", label: "Subscription & Billing", icon: CreditCard },
+  { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 export function Sidebar() {
