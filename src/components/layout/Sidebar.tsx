@@ -18,6 +18,7 @@ import {
   User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useSessionStore } from "@/lib/store/sessionStore";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -33,27 +34,29 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [gold, setGold] = useState<number | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const gold = useSessionStore((state) => state.goldBalance);
+  const setGold = useSessionStore((state) => state.setGoldBalance);
 
   useEffect(() => {
+    if (gold !== null) return;
+
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const userId = session?.user?.id;
+      if (!userId) return;
 
       supabase
         .from("profiles")
         .select("gold_balance")
-        .eq("id", user.id)
+        .eq("id", userId)
         .maybeSingle<{ gold_balance: number | null }>()
         .then(({ data }) => {
           if (data) {
             setGold(data.gold_balance ?? 0);
-            setIsAdmin(false);
           }
         });
     });
-  }, []);
+  }, [gold, setGold]);
 
   return (
     <aside className="hidden w-[260px] flex-col bg-[#0F0F20] md:flex z-40 relative shrink-0">
@@ -115,21 +118,6 @@ export function Sidebar() {
             );
           })}
 
-          {/* Admin link — only for admins */}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className={[
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200",
-                pathname === "/admin"
-                  ? "bg-[#7C3AED]/10 text-[#7C3AED]"
-                  : "text-[#A1A1AA] hover:bg-white/[0.04] hover:text-white",
-              ].join(" ")}
-            >
-              <Shield className="w-[18px] h-[18px]" />
-              Admin
-            </Link>
-          )}
         </nav>
       </div>
 

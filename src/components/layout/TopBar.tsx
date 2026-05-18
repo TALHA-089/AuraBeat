@@ -4,21 +4,27 @@ import { Search, Bell, User, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useSessionStore } from "@/lib/store/sessionStore";
 
 export function TopBar() {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
-  const [userInitial, setUserInitial] = useState("A");
+  const userInitial = useSessionStore((state) => state.userInitial);
+  const setUserInitial = useSessionStore((state) => state.setUserInitial);
+  const clearSession = useSessionStore((state) => state.clearSession);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (userInitial && userInitial !== "A") return;
+
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user && user.email) {
-        setUserInitial(user.email.charAt(0).toUpperCase());
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const email = session?.user?.email;
+      if (email) {
+        setUserInitial(email.charAt(0).toUpperCase());
       }
     });
-  }, []);
+  }, [setUserInitial, userInitial]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -34,6 +40,7 @@ export function TopBar() {
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    clearSession();
     router.push("/login");
   };
 

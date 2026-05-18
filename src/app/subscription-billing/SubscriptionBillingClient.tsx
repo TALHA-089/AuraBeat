@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Star, X, AlertCircle, Check, Coins } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToastStore } from "@/lib/store/toastStore";
+import { useSessionStore } from "@/lib/store/sessionStore";
 
 type SubscriptionProfile = {
   id: string;
@@ -23,6 +24,7 @@ function normalizePlan(plan: string | null) {
 export function SubscriptionBillingClient({ profile }: SubscriptionBillingClientProps) {
   const router = useRouter();
   const addToast = useToastStore((state) => state.addToast);
+  const setGoldBalance = useSessionStore((state) => state.setGoldBalance);
   const [annual, setAnnual] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -136,6 +138,8 @@ export function SubscriptionBillingClient({ profile }: SubscriptionBillingClient
         title: "Subscription Updated",
         message: `You've successfully upgraded to ${selectedPlan} plan! You now have ${goldAmount === 999999 ? "unlimited" : goldAmount} Gold.`,
       });
+
+      setGoldBalance(goldAmount);
 
       setShowPaymentModal(false);
       setSelectedPlan(null);
