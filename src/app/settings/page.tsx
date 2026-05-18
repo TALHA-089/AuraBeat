@@ -36,7 +36,11 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const { data: profile, error } = await supabase
+  // Try fetching with is_admin first, fallback if column doesn't exist
+  let profile;
+  let error;
+
+  const { data: profileData, error: initialError } = await supabase
     .from("profiles")
     .select("id, display_name, gold_balance, plan, created_at, is_admin")
     .eq("id", user.id)
@@ -49,6 +53,33 @@ export default async function SettingsPage() {
       is_admin: boolean | null;
     }>();
 
+  if (initialError && initialError.code === "PGRST100") {
+    // is_admin column doesn't exist, fetch without it
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("profiles")
+      .select("id, display_name, gold_balance, plan, created_at")
+      .eq("id", user.id)
+      .maybeSingle<{
+        id: string;
+        display_name: string | null;
+        gold_balance: number | null;
+        plan: string | null;
+        created_at: string | null;
+      }>();
+
+    if (fallbackData) {
+      profile = {
+        ...fallbackData,
+        is_admin: null,
+      };
+    } else {
+      error = fallbackError;
+    }
+  } else {
+    profile = profileData;
+    error = initialError;
+  }
+
   if (error || !profile) {
     redirect("/dashboard");
   }
@@ -58,8 +89,9 @@ export default async function SettingsPage() {
       <SettingsClient 
         profile={{ 
           ...profile, 
-          email: user.email || ""
-        } as UserProfile & { is_admin: boolean | null }} 
+          email: user.email || "",
+          is_admin: profile.is_admin ?? null,
+        }} 
       />
     </AppLayout>
   );
