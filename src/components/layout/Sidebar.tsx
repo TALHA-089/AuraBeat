@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   Code,
   Coins,
+  CreditCard,
   Crown,
   Home,
   Library,
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/library", label: "Library", icon: Library },
   { href: "/api-platform", label: "API Platform", icon: Code },
   { href: "/profile", label: "Profile", icon: User },
+  { href: "/subscription-billing", label: "Subscription & Billing", icon: CreditCard },
 ] as const;
 
 export function Sidebar() {
@@ -131,7 +133,7 @@ export function Sidebar() {
       {/* Go Premier CTA — pinned at bottom, outside scroll */}
       <div className="p-4 border-t border-[#1E1E3A]">
         <Link
-          href="/profile"
+          href="/subscription-billing"
           className="block rounded-xl p-4 bg-gradient-to-br from-[#7C3AED] to-[#4F46E5] relative overflow-hidden group no-underline text-white"
         >
           <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
