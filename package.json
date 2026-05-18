@@ -1,0 +1,38 @@
+{
+  "name": "aurabeat",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test:selenium": "node tests/selenium/aurabeatCrud.spec.js"
+  },
+  "dependencies": {
+    "@gradio/client": "^2.2.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.3",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.14.0",
+    "motion": "^12.38.0",
+    "next": "14.2.35",
+    "nextjs-toploader": "^3.9.17",
+    "react": "^18",
+    "react-dom": "^18",
+    "replicate": "^1.4.0",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "chromedriver": "^148.0.3",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8",
+    "selenium-webdriver": "^4.44.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
