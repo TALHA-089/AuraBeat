@@ -1,0 +1,339 @@
+{
+  "baseUrl": "http://127.0.0.1:3001",
+  "capturedAt": "2026-05-17T22:42:05.907Z",
+  "screenshots": [
+    {
+      "file": "artifacts/report/screenshots/01-login-desktop.png",
+      "description": "Login page at desktop width",
+      "url": "http://127.0.0.1:3001/login",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/02-login-mobile.png",
+      "description": "Login page at mobile width",
+      "url": "http://127.0.0.1:3001/login",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/03-register-desktop.png",
+      "description": "Register page at desktop width",
+      "url": "http://127.0.0.1:3001/register",
+      "width": 1425,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/04-dashboard-desktop.png",
+      "description": "Dashboard at desktop width",
+      "url": "http://127.0.0.1:3001/dashboard",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/04-dashboard-tablet.png",
+      "description": "Dashboard at tablet width",
+      "url": "http://127.0.0.1:3001/dashboard",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/04-dashboard-mobile.png",
+      "description": "Dashboard at mobile width",
+      "url": "http://127.0.0.1:3001/dashboard",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/05-create-desktop.png",
+      "description": "Create Music page at desktop width",
+      "url": "http://127.0.0.1:3001/create",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/05-create-tablet.png",
+      "description": "Create Music page at tablet width",
+      "url": "http://127.0.0.1:3001/create",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/06-create-advanced-upload.png",
+      "description": "Create Music advanced upload controls",
+      "url": "http://127.0.0.1:3001/create",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/07-library-grid.png",
+      "description": "Library grid view with seeded tracks",
+      "url": "http://127.0.0.1:3001/library",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/07-library-tablet.png",
+      "description": "Library grid view at tablet width",
+      "url": "http://127.0.0.1:3001/library",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/07-library-mobile.png",
+      "description": "Library grid view at mobile width",
+      "url": "http://127.0.0.1:3001/library",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/08-library-list.png",
+      "description": "Library list view with CRUD actions",
+      "url": "http://127.0.0.1:3001/library",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/09-audio-player-active.png",
+      "description": "Persistent audio player after starting playback",
+      "url": "http://127.0.0.1:3001/library",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/10-edit-track-modal.png",
+      "description": "Library edit track modal",
+      "url": "http://127.0.0.1:3001/library",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/11-editor-desktop.png",
+      "description": "Editor page at desktop width",
+      "url": "http://127.0.0.1:3001/editor",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/12-editor-tablet.png",
+      "description": "Editor page at tablet width",
+      "url": "http://127.0.0.1:3001/editor",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/13-profile.png",
+      "description": "Profile page",
+      "url": "http://127.0.0.1:3001/profile",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/14-api-platform.png",
+      "description": "API Platform page",
+      "url": "http://127.0.0.1:3001/api-platform",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/14-api-platform-tablet.png",
+      "description": "API Platform page at tablet width",
+      "url": "http://127.0.0.1:3001/api-platform",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/15-api-key-modal.png",
+      "description": "API key creation modal before revealing a secret key",
+      "url": "http://127.0.0.1:3001/api-platform",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/16-admin-dashboard.png",
+      "description": "Admin dashboard",
+      "url": "http://127.0.0.1:3001/admin",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "file": "artifacts/report/screenshots/17-verification-output.png",
+      "description": "Lint, build, and Selenium output evidence",
+      "url": "file:///Users/talha/aurabeat/artifacts/report/verification-evidence.html",
+      "width": 1425,
+      "height": 761,
+      "horizontalOverflow": false
+    }
+  ],
+  "responsiveSmoke": [
+    {
+      "viewport": "desktop",
+      "route": "/dashboard",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "desktop",
+      "route": "/create",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "desktop",
+      "route": "/library",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "desktop",
+      "route": "/editor",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "desktop",
+      "route": "/profile",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "desktop",
+      "route": "/api-platform",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "desktop",
+      "route": "/admin",
+      "width": 1440,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/dashboard",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/create",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/library",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/editor",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/profile",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/api-platform",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "tablet",
+      "route": "/admin",
+      "width": 768,
+      "height": 761,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/dashboard",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/create",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/library",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/editor",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/profile",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/api-platform",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    },
+    {
+      "viewport": "mobile",
+      "route": "/admin",
+      "width": 500,
+      "height": 705,
+      "horizontalOverflow": false
+    }
+  ]
+}

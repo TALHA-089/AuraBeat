@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getProfileAdminStatus } from "@/lib/auth/admin";
+import { removeStoredTrackAudio } from "@/lib/audio/storageCleanup";
 
 function getSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,18 +46,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify admin status disabled for demo visibility
-    /*
-    const { data: adminProfile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .maybeSingle<{ is_admin: boolean | null }>();
+    const adminSupabase = createAdminClient();
+    const isAdmin = await getProfileAdminStatus(adminSupabase, user.id);
 
-    if (!adminProfile?.is_admin) {
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
-    */
 
     // Parse URL params
     const { searchParams } = new URL(request.url);
@@ -64,8 +61,25 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing track ID" }, { status: 400 });
     }
 
-    // Delete track
-    const { error } = await supabase
+    const { data: track, error: fetchError } = await adminSupabase
+      .from("tracks")
+      .select("audio_url")
+      .eq("id", trackId)
+      .maybeSingle<{ audio_url: string | null }>();
+
+    if (fetchError) {
+      console.error("Admin track fetch error:", fetchError.message);
+      return NextResponse.json(
+        { error: "Failed to fetch track." },
+        { status: 500 }
+      );
+    }
+
+    if (!track) {
+      return NextResponse.json({ error: "Track not found" }, { status: 404 });
+    }
+
+    const { error } = await adminSupabase
       .from("tracks")
       .delete()
       .eq("id", trackId);
@@ -78,7 +92,19 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    const storageRemoval = await removeStoredTrackAudio(
+      adminSupabase,
+      track.audio_url,
+    );
+
+    if (storageRemoval.attempted && !storageRemoval.removed) {
+      console.warn("Admin track storage cleanup failed:", storageRemoval.error);
+    }
+
+    return NextResponse.json({
+      success: true,
+      removedStorage: storageRemoval.removed,
+    });
   } catch (err) {
     console.error("Admin track API error:", err);
     return NextResponse.json(

@@ -276,15 +276,44 @@ async function registerTestUser(driver, baseUrl, email, password) {
   );
 }
 
-async function boostCredits(driver, userId) {
+async function boostCredits({ supabaseUrl, serviceRoleKey, userId }) {
   console.log("Updating test profile credits");
+
+  if (!serviceRoleKey) {
+    throw new Error("Missing service role key. Strict admin mode requires service-role fixture setup.");
+  }
+
+  const result = await fetchJson(
+    `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        gold_balance: 100,
+        plan: "Pro",
+      }),
+    },
+  );
+
+  if (result.status !== 204) {
+    throw new Error(`Profile credit update failed: ${JSON.stringify(result)}`);
+  }
+}
+
+async function verifyAdminApiForbidden(driver, userId) {
+  console.log("Verifying non-admin users cannot call admin APIs");
   const result = await runBrowserFetch(
     driver,
     async (id) => {
       const response = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: id, gold_balance: 100, plan: "Pro" }),
+        body: JSON.stringify({ userId: id, gold_balance: 999, plan: "Admin" }),
       });
       const body = await response.json();
       return { status: response.status, body };
@@ -292,8 +321,8 @@ async function boostCredits(driver, userId) {
     userId,
   );
 
-  if (result.error || result.status !== 200) {
-    throw new Error(`Profile credit update failed: ${JSON.stringify(result)}`);
+  if (result.error || result.status !== 403) {
+    throw new Error(`Expected non-admin admin API call to return 403: ${JSON.stringify(result)}`);
   }
 }
 
@@ -362,6 +391,40 @@ async function verifyLibraryPlayback(driver, baseUrl, trackTitle) {
   await waitForBodyText(driver, "Now playing", 10000);
 }
 
+async function verifyLibraryServerDelete(driver, supabaseUrl, anonKey, accessToken, trackId) {
+  console.log("Deleting a track through /api/tracks/:id");
+  const deleteResult = await runBrowserFetch(
+    driver,
+    async (id) => {
+      const response = await fetch(`/api/tracks/${id}`, { method: "DELETE" });
+      const text = await response.text();
+      let body = null;
+      if (text) {
+        try {
+          body = JSON.parse(text);
+        } catch {
+          body = text;
+        }
+      }
+      return { status: response.status, body };
+    },
+    trackId,
+  );
+
+  if (deleteResult.error || deleteResult.status !== 200 || deleteResult.body?.success !== true) {
+    throw new Error(`Library server delete failed: ${JSON.stringify(deleteResult)}`);
+  }
+
+  const afterDelete = await supabaseRest(supabaseUrl, anonKey, accessToken, "tracks", {
+    method: "GET",
+    query: `?id=eq.${encodeURIComponent(trackId)}&select=id`,
+  });
+
+  if (afterDelete.status !== 200 || !Array.isArray(afterDelete.body) || afterDelete.body.length) {
+    throw new Error(`Expected library-deleted track to be gone: ${JSON.stringify(afterDelete)}`);
+  }
+}
+
 async function verifyEditorLoads(driver, baseUrl) {
   console.log("Confirming editor controls render");
   await driver.get(`${baseUrl}/editor`);
@@ -408,6 +471,33 @@ async function verifyPublicTrackApi(baseUrl, apiKey, trackId) {
   const trackDetails = await fetchJson(`${baseUrl}/v1/tracks/${trackId}`, { headers });
   if (trackDetails.status !== 200 || trackDetails.body?.track?.id !== trackId) {
     throw new Error(`Unexpected /v1/tracks/:id response: ${JSON.stringify(trackDetails)}`);
+  }
+}
+
+async function verifyPublicTrackUpdate(baseUrl, apiKey, trackId) {
+  console.log("Updating the track through /v1/tracks/:id");
+  const updatedTitle = `Selenium Updated Track ${Date.now()}`;
+  const updateResult = await fetchJson(`${baseUrl}/v1/tracks/${trackId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      title: updatedTitle,
+      style_tags: ["selenium", "updated"],
+    }),
+  });
+
+  if (updateResult.status !== 200 || updateResult.body?.track?.title !== updatedTitle) {
+    throw new Error(`PATCH /v1/tracks/${trackId} failed: ${JSON.stringify(updateResult)}`);
+  }
+
+  const detailResult = await fetchJson(`${baseUrl}/v1/tracks/${trackId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (detailResult.body?.track?.title !== updatedTitle) {
+    throw new Error(`Updated track title was not persisted: ${JSON.stringify(detailResult)}`);
   }
 }
 
@@ -474,6 +564,7 @@ async function main() {
   let accessToken = null;
   let apiKey = null;
   let trackId = null;
+  let libraryDeleteTrackId = null;
   let generatedTrackId = null;
 
   writeSilentWav(trackFile);
@@ -500,7 +591,8 @@ async function main() {
     userId = session.userId;
     accessToken = session.accessToken;
 
-    await boostCredits(driver, userId);
+    await verifyAdminApiForbidden(driver, userId);
+    await boostCredits({ supabaseUrl, serviceRoleKey, userId });
 
     console.log("Creating a track fixture through Supabase REST");
     const track = await createTrackFixture({
@@ -515,10 +607,29 @@ async function main() {
 
     await verifyReferenceAudioUpload(driver, baseUrl, trackFile);
     await verifyLibraryPlayback(driver, baseUrl, trackTitle);
+
+    const libraryDeleteTrack = await createTrackFixture({
+      supabaseUrl,
+      anonKey,
+      accessToken,
+      userId,
+      title: `Selenium Library Delete ${Date.now()}`,
+    });
+    libraryDeleteTrackId = libraryDeleteTrack.id;
+    await verifyLibraryServerDelete(
+      driver,
+      supabaseUrl,
+      anonKey,
+      accessToken,
+      libraryDeleteTrackId,
+    );
+    libraryDeleteTrackId = null;
+
     await verifyEditorLoads(driver, baseUrl);
 
     apiKey = await createApiKey(driver);
     await verifyPublicTrackApi(baseUrl, apiKey, trackId);
+    await verifyPublicTrackUpdate(baseUrl, apiKey, trackId);
     generatedTrackId = await maybeVerifyGeneration(baseUrl, apiKey);
     await verifyPublicTrackDelete(baseUrl, apiKey, trackId);
     trackId = null;
@@ -536,6 +647,16 @@ async function main() {
         query: `?id=eq.${encodeURIComponent(trackId)}`,
         headers: { Prefer: "return=minimal" },
       }).catch((error) => console.warn(`Could not cleanup track fixture: ${error.message}`));
+    }
+
+    if (libraryDeleteTrackId && accessToken) {
+      await supabaseRest(supabaseUrl, anonKey, accessToken, "tracks", {
+        method: "DELETE",
+        query: `?id=eq.${encodeURIComponent(libraryDeleteTrackId)}`,
+        headers: { Prefer: "return=minimal" },
+      }).catch((error) =>
+        console.warn(`Could not cleanup library delete fixture: ${error.message}`),
+      );
     }
 
     if (generatedTrackId && accessToken) {

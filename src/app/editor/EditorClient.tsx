@@ -737,9 +737,9 @@ export function EditorClient({ tracks }: EditorClientProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#0D0D1A]">
       {/* Header */}
-      <div className="p-6 border-b border-[#1E1E3A] flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="p-4 sm:p-6 border-b border-[#1E1E3A] flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
                 Music Editor
@@ -761,7 +761,7 @@ export function EditorClient({ tracks }: EditorClientProps) {
                   setIsLoaded(false);
                   handleStop();
                 }}
-                className="bg-[#111128] border border-[#1E1E3A] rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-[#7C3AED] transition-colors"
+                className="w-full sm:w-auto max-w-full bg-[#111128] border border-[#1E1E3A] rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-[#7C3AED] transition-colors"
               >
                 {tracks.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -804,8 +804,8 @@ export function EditorClient({ tracks }: EditorClientProps) {
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between bg-[#111128] p-2 rounded-xl border border-[#1E1E3A]">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 bg-[#111128] p-2 rounded-xl border border-[#1E1E3A] overflow-x-auto custom-scrollbar">
+          <div className="flex flex-wrap items-center gap-1 min-w-max xl:min-w-0">
             <ToolButton
               icon={<Scissors className="w-4 h-4" />}
               label="Split"
@@ -852,7 +852,7 @@ export function EditorClient({ tracks }: EditorClientProps) {
             />
           </div>
 
-          <div className="flex items-center gap-3 px-4">
+          <div className="flex flex-wrap items-center gap-3 px-1 sm:px-4">
             <div className="flex items-center gap-2">
               <span className="text-xs text-[#A1A1AA] uppercase font-semibold">
                 Tempo
@@ -891,7 +891,7 @@ export function EditorClient({ tracks }: EditorClientProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 px-2">
+          <div className="flex flex-wrap items-center gap-2 px-1 sm:px-2">
             <span className="text-xs text-[#A1A1AA] uppercase font-semibold">
               Selection
             </span>
@@ -951,7 +951,7 @@ export function EditorClient({ tracks }: EditorClientProps) {
       </div>
 
       {/* Playback Transport */}
-      <div className="px-6 py-3 border-b border-[#1E1E3A] flex items-center justify-center gap-4">
+      <div className="px-4 sm:px-6 py-3 border-b border-[#1E1E3A] flex items-center justify-center gap-3 sm:gap-4">
         <span className="text-xs text-[#A1A1AA] tabular-nums w-12 text-right">
           {formatTime(currentTime)}
         </span>
@@ -990,7 +990,7 @@ export function EditorClient({ tracks }: EditorClientProps) {
       </div>
 
       {/* Waveform Editor Area */}
-      <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 p-4 sm:p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
         {tracks.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50">
             <Activity className="w-12 h-12 text-white/20 mb-4" />
@@ -1001,12 +1001,12 @@ export function EditorClient({ tracks }: EditorClientProps) {
           </div>
         ) : (
           <div
-            className={`bg-[#111128] border border-[#1E1E3A] rounded-xl p-4 flex-1 flex flex-col relative overflow-hidden ${isExpanded ? "min-h-[600px]" : "min-h-[400px]"
+            className={`bg-[#111128] border border-[#1E1E3A] rounded-xl p-3 sm:p-4 flex-1 flex flex-col relative overflow-x-auto overflow-y-hidden ${isExpanded ? "min-h-[600px]" : "min-h-[400px]"
               }`}
             onClick={handleWaveformClick}
           >
             {/* Time Ruler */}
-            <div className="h-6 border-b border-[#1E1E3A] flex items-center justify-between px-16 text-[10px] text-white/30 relative mb-4">
+            <div className="h-6 min-w-[720px] border-b border-[#1E1E3A] flex items-center justify-between px-16 text-[10px] text-white/30 relative mb-4">
               <span>0:00</span>
               <span>{formatTime(duration * 0.2)}</span>
               <span>{formatTime(duration * 0.4)}</span>
@@ -1035,7 +1035,7 @@ export function EditorClient({ tracks }: EditorClientProps) {
             )}
 
             {/* Stems/Tracks */}
-            <div className="flex-1 flex flex-col gap-2">
+            <div className="flex-1 min-w-[720px] flex flex-col gap-2">
               {STEM_LABELS.map((stem, i) => (
                 <StemTrack
                   key={stem.name}

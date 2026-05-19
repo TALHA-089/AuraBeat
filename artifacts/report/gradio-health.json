@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-05-18T01:25:58.584Z",
+  "configured": true,
+  "predictionEndpointStatus": 200,
+  "ok": true,
+  "note": "Prediction endpoint accepted the health request.",
+  "elapsedMs": 2297
+}

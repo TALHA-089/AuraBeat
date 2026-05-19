@@ -19,6 +19,8 @@ type GenerateBody = {
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 5;
+const GRADIO_SUBMIT_TIMEOUT_MS = 10000;
+const GRADIO_RESULT_TIMEOUT_MS = 180000;
 
 export async function POST(request: NextRequest) {
 
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: [optimizedPrompt] }),
-        signal: AbortSignal.timeout(10000), // 10s timeout
+        signal: AbortSignal.timeout(GRADIO_SUBMIT_TIMEOUT_MS),
       });
     } catch (fetchErr) {
       console.error("Gradio fetch error:", fetchErr);
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
     try {
       resultRes = await fetch(
         `${gradioUrl}/gradio_api/call/predict/${eventId}`,
-        { signal: AbortSignal.timeout(60000) } // 60s timeout for generation
+        { signal: AbortSignal.timeout(GRADIO_RESULT_TIMEOUT_MS) },
       );
     } catch {
        return NextResponse.json(
@@ -240,4 +242,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

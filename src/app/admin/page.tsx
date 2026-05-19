@@ -1,6 +1,8 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getProfileAdminStatus, isMissingAdminColumnError } from "@/lib/auth/admin";
 import { AdminClient } from "./AdminClient";
 
 type ProfileRow = {
@@ -33,29 +35,23 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
-  // Check admin status disabled for demo visibility
-  /*
-  const { data: adminProfile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .maybeSingle<{ is_admin: boolean | null }>();
+  const adminSupabase = createAdminClient();
+  const isAdmin = await getProfileAdminStatus(adminSupabase, user.id);
 
-  if (!adminProfile?.is_admin) {
+  if (!isAdmin) {
     redirect("/dashboard");
   }
-  */
 
   // Fetch aggregate data
-  const { count: totalUsers } = await supabase
+  const { count: totalUsers } = await adminSupabase
     .from("profiles")
     .select("id", { count: "exact", head: true });
 
-  const { count: totalTracks } = await supabase
+  const { count: totalTracks } = await adminSupabase
     .from("tracks")
     .select("id", { count: "exact", head: true });
 
-  const { data: goldData } = await supabase
+  const { data: goldData } = await adminSupabase
     .from("profiles")
     .select("gold_balance")
     .returns<{ gold_balance: number | null }[]>();
@@ -64,15 +60,31 @@ export default async function AdminPage() {
     goldData?.reduce((sum, p) => sum + (p.gold_balance ?? 0), 0) ?? 0;
 
   // Recent profiles
-  const { data: recentProfiles } = await supabase
+  const recentProfilesResult = await adminSupabase
     .from("profiles")
     .select("id, display_name, gold_balance, plan, is_admin, created_at")
     .order("created_at", { ascending: false })
     .limit(10)
     .returns<ProfileRow[]>();
+  let recentProfiles = recentProfilesResult.data;
+
+  if (isMissingAdminColumnError(recentProfilesResult.error)) {
+    const { data: fallbackProfiles } = await adminSupabase
+      .from("profiles")
+      .select("id, display_name, gold_balance, plan, created_at")
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .returns<Omit<ProfileRow, "is_admin">[]>();
+
+    recentProfiles =
+      fallbackProfiles?.map((profile) => ({
+        ...profile,
+        is_admin: profile.plan?.toLowerCase() === "admin",
+      })) ?? null;
+  }
 
   // Recent tracks
-  const { data: recentTracks } = await supabase
+  const { data: recentTracks } = await adminSupabase
     .from("tracks")
     .select("id, title, user_id, style_tags, created_at")
     .order("created_at", { ascending: false })
@@ -82,7 +94,7 @@ export default async function AdminPage() {
   // API key count
   let apiKeyCount = 0;
   try {
-    const { count } = await supabase
+    const { count } = await adminSupabase
       .from("api_keys")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true);

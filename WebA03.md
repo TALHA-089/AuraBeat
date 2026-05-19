@@ -422,15 +422,17 @@ The Selenium script performs the following actions:
 11. Finds the created test track.
 12. Clicks the track play button.
 13. Confirms that the player shows "Now playing".
-14. Opens the `/editor` page.
-15. Confirms editor controls are visible.
-16. Creates an API key through `/api/keys`.
-17. Calls `/v1/tracks` to verify the track appears in the API list.
-18. Calls `/v1/tracks/[id]` to verify track details.
-19. Optionally calls `/v1/generate` if live AI testing is enabled.
-20. Deletes the test track through `/v1/tracks/[id]`.
-21. Confirms that the deleted track returns `404`.
-22. Cleans up the temporary file and test user.
+14. Creates a second track fixture and deletes it through authenticated `DELETE /api/tracks/[id]`.
+15. Opens the `/editor` page.
+16. Confirms editor controls are visible.
+17. Creates an API key through `/api/keys`.
+18. Calls `/v1/tracks` to verify the track appears in the API list.
+19. Calls `/v1/tracks/[id]` to verify track details.
+20. Updates track metadata through `PATCH /v1/tracks/[id]`.
+21. Optionally calls `/v1/generate` if live AI testing is enabled.
+22. Deletes the test track through `DELETE /v1/tracks/[id]`.
+23. Confirms that the deleted track returns `404`.
+24. Cleans up the temporary file and test user.
 
 ---
 
@@ -446,28 +448,31 @@ The CRUD operations are mapped as follows:
 |---|---|---|
 | Create | Create a track record and upload reference audio | Selenium registers user, creates a track fixture, and uploads audio through `/create` |
 | Read | View track in Library and public API | Selenium checks `/library`, `/v1/tracks`, and `/v1/tracks/[id]` |
-| Update | Update user profile/credits and track-related state | Selenium updates the test user's profile credits before track/API testing; planned track status update can be verified through Save to Library |
-| Delete | Delete a track | Selenium calls `/v1/tracks/[id]` with `DELETE` and verifies `404` afterward |
+| Update | Update track metadata and user profile/credits | Selenium updates the test user's profile credits and verifies `PATCH /v1/tracks/[id]` changes the track title/tags |
+| Delete | Delete a track | Selenium verifies authenticated `/api/tracks/[id]` delete and public `DELETE /v1/tracks/[id]`, then confirms the public API returns `404` afterward |
 
-Because the current public track API supports `GET` and `DELETE` for tracks, the automated test verifies track Create, Read, and Delete directly. The Update part is represented by profile/credit update in the automated setup and by the planned Save-to-Library track status update for future complete track update coverage.
+The public track API now supports `GET`, `PATCH`, and `DELETE` for individual tracks. The automated test verifies Create, Read, Update, and Delete directly.
 
 ## 7.2 CRUD Test Case Table
 
 | Test Case ID | Operation | Test Objective | Test Steps | Expected Result | Status |
 |---|---|---|---|---|---|
 | TC-01 | Create User | Verify that a new user can register | Open `/register`, enter display name, email, password, confirm password, accept terms, submit | User is redirected to `/dashboard` | Passed |
-| TC-02 | Update Profile Credits | Verify backend update route works for test setup | Call `/api/admin/users` with test user ID and credit balance | User profile receives Pro plan and 100 Gold credits | Passed |
-| TC-03 | Create Track | Verify a track can be created for the authenticated user | Insert a track fixture into Supabase `tracks` table using authenticated REST request | Track row is created and an ID is returned | Passed |
-| TC-04 | Create / Upload Audio | Verify reference audio upload usability | Open `/create`, select Custom mode, open Advanced Parameters, upload silent `.wav` file | Upload completes and UI shows Ready | Passed |
-| TC-05 | Read Track in Library | Verify the Library displays created track | Open `/library`, switch to list view, locate the test track title | Track is visible in the Library table | Passed |
-| TC-06 | Read / Playback | Verify user can play a track from Library | Click Play button beside the test track | Audio player displays Now playing feedback | Passed |
-| TC-07 | Read Editor Page | Verify editor loads important controls | Open `/editor`, wait for tempo input and page heading | Editor controls render successfully | Passed |
-| TC-08 | Create API Key | Verify user can create an API key | Call `/api/keys` in authenticated browser context | API key is returned | Passed |
-| TC-09 | Read Tracks API | Verify public track list endpoint | Call `GET /v1/tracks?limit=50` using API key | Response status is `200` and includes test track | Passed |
-| TC-10 | Read Track Detail API | Verify public track detail endpoint | Call `GET /v1/tracks/[id]` using API key | Response status is `200` and correct track ID is returned | Passed |
-| TC-11 | Generate Track API | Verify live AI generation through API | Call `POST /v1/generate` using API key | Track is generated and returned; this is optional because it depends on live Gradio server | Optional |
-| TC-12 | Delete Track API | Verify track deletion | Call `DELETE /v1/tracks/[id]` using API key | Response returns `{ success: true }` | Passed |
-| TC-13 | Confirm Delete | Verify deleted track is no longer readable | Call `GET /v1/tracks/[id]` after deletion | Response status is `404` | Passed |
+| TC-02 | Admin API Negative Test | Verify normal users cannot access admin APIs | Call `/api/admin/users` as a non-admin test user | Response status is `403` | Passed |
+| TC-03 | Update Profile Credits | Prepare credits for test setup | Update profile through Supabase service-role REST | User profile receives Pro plan and 100 Gold credits | Passed |
+| TC-04 | Create Track | Verify a track can be created for the authenticated user | Insert a track fixture into Supabase `tracks` table using authenticated REST request | Track row is created and an ID is returned | Passed |
+| TC-05 | Create / Upload Audio | Verify reference audio upload usability | Open `/create`, select Custom mode, open Advanced Parameters, upload silent `.wav` file | Upload completes and UI shows Ready | Passed |
+| TC-06 | Read Track in Library | Verify the Library displays created track | Open `/library`, switch to list view, locate the test track title | Track is visible in the Library table | Passed |
+| TC-07 | Read / Playback | Verify user can play a track from Library | Click Play button beside the test track | Audio player displays Now playing feedback | Passed |
+| TC-08 | Delete Track via Library Route | Verify authenticated app delete route | Call `DELETE /api/tracks/[id]` from the browser session for a second fixture | Response returns `{ success: true }` and row is removed | Passed |
+| TC-09 | Read Editor Page | Verify editor loads important controls | Open `/editor`, wait for tempo input and page heading | Editor controls render successfully | Passed |
+| TC-10 | Create API Key | Verify user can create an API key | Call `/api/keys` in authenticated browser context | API key is returned | Passed |
+| TC-11 | Read Tracks API | Verify public track list endpoint | Call `GET /v1/tracks?limit=50` using API key | Response status is `200` and includes test track | Passed |
+| TC-12 | Read Track Detail API | Verify public track detail endpoint | Call `GET /v1/tracks/[id]` using API key | Response status is `200` and correct track ID is returned | Passed |
+| TC-13 | Update Track API | Verify public track update endpoint | Call `PATCH /v1/tracks/[id]` using API key with a new title and tags | Response status is `200` and updated title persists | Passed |
+| TC-14 | Generate Track API | Verify live AI generation through API | Call `POST /v1/generate` using API key | Track is generated and returned; this is optional because it depends on live Gradio server | Optional |
+| TC-15 | Delete Track API | Verify public API track deletion | Call `DELETE /v1/tracks/[id]` using API key | Response returns `{ success: true }` | Passed |
+| TC-16 | Confirm Delete | Verify deleted track is no longer readable | Call `GET /v1/tracks/[id]` after deletion | Response status is `404` | Passed |
 
 ## 7.3 Detailed CRUD Plan
 
@@ -526,16 +531,16 @@ Because the current public track API supports `GET` and `DELETE` for tracks, the
 
 **Current Automated Coverage:**
 
-The Selenium test updates the test user's profile state by calling `/api/admin/users` and setting:
+The Selenium test first verifies that a normal user receives `403` from `/api/admin/users`. It then prepares the test user's profile state through Supabase service-role REST by setting:
 
 - `gold_balance` to `100`
 - `plan` to `Pro`
 
 This verifies update behavior for the `profiles` resource.
 
-**Planned Track Update Coverage:**
+**Track Update Coverage:**
 
-A future test can verify track update behavior by adding a public or authenticated update endpoint for track metadata, for example:
+The public API includes an update endpoint for track metadata:
 
 ```http
 PATCH /v1/tracks/[id]
@@ -550,7 +555,7 @@ Possible update fields:
 **Expected Result:**
 
 - Profile update returns success.
-- Future track update endpoint should return updated track metadata.
+- Track update returns the updated track metadata.
 
 ### Delete Operation Plan
 
@@ -559,12 +564,14 @@ Possible update fields:
 **Steps:**
 
 1. Call `DELETE /v1/tracks/[id]` using the generated API key.
-2. Confirm response returns success.
-3. Call `GET /v1/tracks/[id]` again.
+2. Call authenticated `DELETE /api/tracks/[id]` for a second fixture from the browser session.
+3. Confirm both delete responses return success.
+4. Call `GET /v1/tracks/[id]` again for the public API fixture.
 
 **Expected Result:**
 
 - Delete response returns status `200`.
+- Authenticated app delete response returns status `200`.
 - Deleted track returns status `404`.
 
 ---
@@ -674,6 +681,7 @@ Reading the track in the library and starting playback
 Confirming editor controls render
 Creating an API key
 Verifying /v1/tracks list and detail
+Updating the track through /v1/tracks/:id
 Skipping /v1/generate. Set SELENIUM_RUN_GENERATE=1 to include the live AI backend.
 Deleting the track through /v1/tracks/:id
 Selenium CRUD flow completed successfully
@@ -681,12 +689,12 @@ Selenium CRUD flow completed successfully
 
 ## 9.4 Notes About Optional Generation Test
 
-The `/v1/generate` endpoint depends on a live Gradio server running the MusicGen backend. Since the Gradio URL can expire when the Colab runtime stops, the generation test is optional by default.
+The `/v1/generate` endpoint depends on a live Gradio server running the MusicGen backend. Since the Gradio URL can expire when the Colab runtime stops, the generation test is optional by default. On 18 May 2026, the configured Gradio endpoint was online and the live Selenium generation run passed.
 
 To enable live generation testing, run:
 
 ```bash
-SELENIUM_RUN_GENERATE=1 SELENIUM_BASE_URL=http://127.0.0.1:3001 npm run test:selenium
+SELENIUM_RUN_GENERATE=1 SELENIUM_GENERATE_TIMEOUT_MS=240000 SELENIUM_BASE_URL=http://127.0.0.1:3001 npm run test:selenium
 ```
 
 This will call the real `/v1/generate` endpoint and verify that a generated track is returned.
@@ -713,16 +721,16 @@ Some usability risks were also identified:
 
 - Live AI generation depends on the Gradio server being online.
 - If Supabase email confirmation is enabled, automated registration requires additional setup.
-- Deleting a track removes the database record, but storage cleanup may require a future background job.
-- Track metadata update is not exposed as a full public CRUD endpoint yet.
+- Delete routes remove the database record and attempt Supabase Storage cleanup when the audio URL maps to the `tracks` bucket.
+- Track metadata update is exposed through `PATCH /v1/tracks/[id]`; future work can add richer editor-driven metadata updates.
 
 ## 10.3 Suggested Improvements
 
 Recommended improvements:
 
-1. Add a public or authenticated `PATCH /v1/tracks/[id]` endpoint for track metadata updates.
-2. Add storage cleanup when a track is deleted.
-3. Add screenshots to the final Word document for each major Selenium test stage.
+1. Add richer metadata fields to the Library edit dialog if required.
+2. Add an optional background audit job for orphaned storage files.
+3. Insert the captured screenshots into the final Word document for each major Selenium test stage.
 4. Add CI support so Selenium tests can run automatically.
 5. Add test data seeding and cleanup scripts for repeatable academic demonstration.
 
@@ -732,7 +740,7 @@ Recommended improvements:
 
 AuraBeat uses a modern full-stack web architecture based on Next.js 14, React, TypeScript, Supabase, Tailwind CSS, Zustand, and Gradio/MusicGen. This architecture is appropriate because the application needs interactive pages, protected routes, server-side data access, API endpoints, file storage, authentication, and AI integration.
 
-Selenium WebDriver was used to test the most important browser workflows and CRUD-related operations. The automated test verifies registration, authentication, track creation setup, reference audio upload, track reading in the Library, playback, editor rendering, API key creation, public API read operations, and track deletion. The Selenium CRUD test passed successfully, demonstrating that the main AuraBeat workflows are functioning correctly.
+Selenium WebDriver was used to test the most important browser workflows and CRUD-related operations. The automated test verifies registration, authentication, track creation setup, reference audio upload, track reading in the Library, playback, editor rendering, API key creation, public API read operations, public API update operations, and track deletion. The Selenium CRUD test passed successfully, demonstrating that the main AuraBeat workflows are functioning correctly.
 
 This satisfies the assignment requirements for application architecture selection, Selenium-based web application testing, and CRUD test planning.
 
@@ -748,10 +756,12 @@ This satisfies the assignment requirements for application architecture selectio
 | `src/app/library/LibraryClient.tsx` | Library UI and track actions |
 | `src/app/editor/EditorClient.tsx` | Music Editor UI |
 | `src/app/api/keys/route.ts` | API key creation and deletion |
+| `src/app/api/tracks/[id]/route.ts` | Authenticated app track delete endpoint |
 | `src/app/api/v1/tracks/route.ts` | Public track list endpoint |
-| `src/app/api/v1/tracks/[id]/route.ts` | Public track detail and delete endpoint |
+| `src/app/api/v1/tracks/[id]/route.ts` | Public track detail, update, and delete endpoint |
 | `src/app/api/v1/generate/route.ts` | Public generation endpoint |
 | `src/lib/auth/apiKey.ts` | API key authentication helper |
+| `src/lib/audio/storageCleanup.ts` | Shared Supabase Storage cleanup helper |
 | `tests/selenium/aurabeatCrud.spec.js` | Selenium CRUD test |
 | `package.json` | Project scripts and dependencies |
 
@@ -787,6 +797,16 @@ Run production build:
 npm run build
 ```
 
+Verification output and screenshots captured for the report:
+
+```text
+artifacts/report/lint-output.txt
+artifacts/report/build-output.txt
+artifacts/report/selenium-output.txt
+artifacts/report/selenium-output-live-generate.txt
+artifacts/report/screenshots/17-verification-output.png
+```
+
 ## 12.3 Selenium Tutorial References From Assignment
 
 The assignment image included these Selenium tutorial references:
@@ -795,4 +815,3 @@ The assignment image included these Selenium tutorial references:
 2. `https://www.guru99.com/selenium-tutorial.html`
 
 The implemented Selenium test follows the same general approach: open a real browser, locate page elements, perform user actions, wait for expected UI changes, and verify the final result.
-

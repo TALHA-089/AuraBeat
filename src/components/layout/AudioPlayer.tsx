@@ -157,7 +157,7 @@ export function AudioPlayer() {
   }
 
   return (
-    <div className="h-[72px] bg-[#0C0C1B] border-t border-[#1E1E3A] flex items-center justify-between px-5 z-50 shrink-0 select-none">
+    <div className="min-h-[96px] sm:h-[72px] bg-[#0C0C1B] border-t border-[#1E1E3A] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-5 py-2 sm:py-0 z-50 shrink-0 select-none">
       <audio
         ref={audioRef}
         className="hidden"
@@ -185,8 +185,8 @@ export function AudioPlayer() {
       />
 
       {/* Left — Track info */}
-      <div className="flex items-center gap-4 w-[30%] min-w-[180px]">
-        <div className="w-11 h-11 rounded-md bg-[#1A1A2E] flex items-center justify-center shrink-0 border border-[#1E1E3A]">
+      <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-[30%] min-w-0 sm:min-w-[180px]">
+        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-md bg-[#1A1A2E] flex items-center justify-center shrink-0 border border-[#1E1E3A]">
           <Music className="w-5 h-5 text-[#A1A1AA]" />
         </div>
         <div className="min-w-0 flex flex-col justify-center">
@@ -200,8 +200,8 @@ export function AudioPlayer() {
       </div>
 
       {/* Center — Controls + Progress */}
-      <div className="flex flex-col items-center justify-center w-[40%] max-w-[722px] px-4">
-        <div className="flex items-center gap-6 mb-2">
+      <div className="flex flex-col items-center justify-center w-full sm:w-[40%] sm:max-w-[722px] sm:px-4">
+        <div className="flex items-center gap-4 sm:gap-6 mb-2">
           <button
             type="button"
             onClick={toggleShuffle}
@@ -288,7 +288,7 @@ export function AudioPlayer() {
       </div>
 
       {/* Right — Volume & actions */}
-      <div className="flex items-center justify-end gap-4 w-[30%] min-w-[180px]">
+      <div className="hidden sm:flex items-center justify-end gap-4 w-[30%] min-w-[180px]">
         <button
           type="button"
           onClick={handleDownload}

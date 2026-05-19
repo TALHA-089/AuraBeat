@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getProfileAdminStatus, isMissingAdminColumnError } from "@/lib/auth/admin";
 
 function getSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,36 +45,51 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify admin status disabled for demo visibility
-    /*
-    const { data: adminProfile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .maybeSingle<{ is_admin: boolean | null }>();
+    const adminSupabase = createAdminClient();
+    const isAdmin = await getProfileAdminStatus(adminSupabase, user.id);
 
-    if (!adminProfile?.is_admin) {
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
-    */
 
     // Parse payload
     const body = await request.json();
-    const { userId, plan, gold_balance } = body;
+    const { userId, plan, gold_balance, is_admin } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Missing user ID" }, { status: 400 });
     }
 
-    // Update profile
-    const { error } = await supabase
+    const updatePayload: {
+      plan: string;
+      gold_balance: number;
+      is_admin?: boolean;
+    } = {
+      plan: typeof plan === "string" && plan.trim() ? plan.trim() : "Free",
+      gold_balance: typeof gold_balance === "number" ? gold_balance : 0,
+    };
+
+    if (typeof is_admin === "boolean") {
+      updatePayload.is_admin = is_admin;
+    }
+
+    let { error } = await adminSupabase
       .from("profiles")
-      .update({
-        plan: plan || "Free",
-        gold_balance: typeof gold_balance === "number" ? gold_balance : 0,
-        // is_admin: Boolean(is_admin), // Disabled for demo to prevent missing column error
-      })
+      .update(updatePayload)
       .eq("id", userId);
+
+    if (isMissingAdminColumnError(error) && typeof is_admin === "boolean") {
+      const fallbackPayload = {
+        plan: is_admin ? "Admin" : updatePayload.plan.toLowerCase() === "admin" ? "Free" : updatePayload.plan,
+        gold_balance: updatePayload.gold_balance,
+      };
+
+      const fallbackResult = await adminSupabase
+        .from("profiles")
+        .update(fallbackPayload)
+        .eq("id", userId);
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error("Admin user update error:", error.message);

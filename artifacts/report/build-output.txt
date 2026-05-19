@@ -1,0 +1,57 @@
+
+> aurabeat@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/26) ...
+   Generating static pages (6/26) 
+   Generating static pages (12/26) 
+   Generating static pages (19/26) 
+ ✓ Generating static pages (26/26)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ƒ /                                    146 B          87.5 kB
+├ ○ /_not-found                          146 B          87.5 kB
+├ ƒ /admin                               4.18 kB         174 kB
+├ ƒ /api-platform                        3.9 kB          174 kB
+├ ƒ /api/admin/tracks                    0 B                0 B
+├ ƒ /api/admin/users                     0 B                0 B
+├ ƒ /api/generate                        0 B                0 B
+├ ƒ /api/keys                            0 B                0 B
+├ ƒ /api/tracks/[id]                     0 B                0 B
+├ ƒ /api/v1/generate                     0 B                0 B
+├ ƒ /api/v1/tracks                       0 B                0 B
+├ ƒ /api/v1/tracks/[id]                  0 B                0 B
+├ ƒ /auth/callback                       0 B                0 B
+├ ○ /create                              8.59 kB         220 kB
+├ ƒ /dashboard                           220 B           170 kB
+├ ƒ /editor                              6.57 kB         177 kB
+├ ○ /forgot-password                     2.07 kB         164 kB
+├ ƒ /library                             6.59 kB         218 kB
+├ ○ /login                               2.89 kB         165 kB
+├ ƒ /profile                             4.03 kB         174 kB
+├ ○ /register                            3.44 kB         165 kB
+├ ○ /reset-password                      3.2 kB          165 kB
+├ ○ /speech                              3.59 kB         174 kB
+├ ƒ /v1/generate                         0 B                0 B
+├ ƒ /v1/tracks                           0 B                0 B
+└ ƒ /v1/tracks/[id]                      0 B                0 B
++ First Load JS shared by all            87.3 kB
+  ├ chunks/117-4f5b424f20efdcae.js       31.7 kB
+  ├ chunks/fd9d1056-b11b2651f33aae7f.js  53.6 kB
+  └ other shared chunks (total)          1.95 kB
+
+
+ƒ Middleware                             81.6 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

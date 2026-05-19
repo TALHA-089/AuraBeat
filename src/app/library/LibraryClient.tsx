@@ -11,7 +11,9 @@ import {
   List,
   Music,
   MoreVertical,
+  Pencil,
   Play,
+  Save,
   Search,
   SortAsc,
   Tags,
@@ -80,6 +82,10 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [editingTrack, setEditingTrack] = useState<LibraryTrack | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Batch selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -203,6 +209,69 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
     }
   }
 
+  function openEditModal(track: LibraryTrack) {
+    setEditingTrack(track);
+    setEditTitle(getTrackTitle(track));
+    setEditTags((track.style_tags ?? []).join(", "));
+  }
+
+  function closeEditModal() {
+    if (isSavingEdit) return;
+    setEditingTrack(null);
+    setEditTitle("");
+    setEditTags("");
+  }
+
+  async function handleSaveEdit() {
+    if (!editingTrack) return;
+
+    const title = editTitle.trim();
+    if (!title) {
+      addToast({
+        variant: "error",
+        title: "Title required",
+        message: "Please enter a track title.",
+      });
+      return;
+    }
+
+    const style_tags = editTags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .slice(0, 10);
+
+    setIsSavingEdit(true);
+    const supabase = createClient();
+    const { data, error: updateError } = await supabase
+      .from("tracks")
+      .update({ title, style_tags })
+      .eq("id", editingTrack.id)
+      .select("id, title, prompt, style_tags, audio_url, duration_seconds, created_at")
+      .single<LibraryTrack>();
+
+    setIsSavingEdit(false);
+
+    if (updateError || !data) {
+      addToast({
+        variant: "error",
+        title: "Update failed",
+        message: updateError?.message || "Could not update this track.",
+      });
+      return;
+    }
+
+    setLocalTracks((current) =>
+      current.map((track) => (track.id === data.id ? data : track)),
+    );
+    addToast({
+      variant: "success",
+      title: "Track updated",
+      message: "The title and tags were saved.",
+    });
+    closeEditModal();
+  }
+
   function handlePlay(track: LibraryTrack) {
     if (!track.audio_url) {
       setError("This track does not have an audio file.");
@@ -243,20 +312,30 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
     setDeletingId(trackId);
     setError(null);
 
-    const supabase = createClient();
-    const { error: deleteError } = await supabase
-      .from("tracks")
-      .delete()
-      .eq("id", trackId);
+    let deleteError: string | null = null;
+    try {
+      const res = await fetch(`/api/tracks/${encodeURIComponent(trackId)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        deleteError = body?.error || "Could not delete track.";
+      }
+    } catch {
+      deleteError = "Could not delete track.";
+    }
 
     setDeletingId(null);
 
     if (deleteError) {
-      setError(deleteError.message || "Could not delete track.");
+      setError(deleteError);
       addToast({
         variant: "error",
         title: "Delete failed",
-        message: deleteError.message || "Could not delete track.",
+        message: deleteError,
       });
       return;
     }
@@ -281,41 +360,62 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
     );
     if (!confirmed) return;
 
-    const supabase = createClient();
     const ids = Array.from(selectedIds);
 
-    const { error: deleteError } = await supabase
-      .from("tracks")
-      .delete()
-      .in("id", ids);
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const res = await fetch(`/api/tracks/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+          });
+          return { id, ok: res.ok };
+        } catch {
+          return { id, ok: false };
+        }
+      }),
+    );
 
-    if (deleteError) {
+    const deletedIds = new Set(
+      results.filter((result) => result.ok).map((result) => result.id),
+    );
+    const failedCount = results.length - deletedIds.size;
+
+    if (failedCount > 0) {
       addToast({
         variant: "error",
         title: "Delete failed",
-        message: deleteError.message || "Could not delete tracks.",
+        message:
+          deletedIds.size > 0
+            ? `${deletedIds.size} track(s) were deleted, but ${failedCount} failed.`
+            : "Could not delete tracks.",
       });
-      return;
     }
 
     setLocalTracks((current) =>
-      current.filter((t) => !selectedIds.has(t.id)),
+      current.filter((t) => !deletedIds.has(t.id)),
     );
-    setSelectedIds(new Set());
-    addToast({
-      variant: "success",
-      title: "Tracks deleted",
-      message: `${ids.length} track(s) removed from your library.`,
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      deletedIds.forEach((id) => next.delete(id));
+      return next;
     });
+
+    if (deletedIds.size > 0 && failedCount === 0) {
+      addToast({
+        variant: "success",
+        title: "Tracks deleted",
+        message: `${deletedIds.size} track(s) removed from your library.`,
+      });
+    }
   }
 
   return (
     <div className="flex-1 flex flex-col bg-[#0D0D1A] overflow-hidden">
       {/* Header & Controls */}
-      <div className="p-6 border-b border-white/5 bg-[#111122]/50 shrink-0">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 sm:p-6 border-b border-white/5 bg-[#111122]/50 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h1 className="text-2xl font-bold tracking-tight">Library</h1>
-          <div className="flex bg-[#1A1A2E] border border-white/5 rounded-lg p-1">
+          <div className="flex bg-[#1A1A2E] border border-white/5 rounded-lg p-1 self-start sm:self-auto">
             <button
               type="button"
               className="px-4 py-1.5 text-sm font-medium bg-[#7C3AED] text-white rounded-md"
@@ -325,8 +425,8 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 max-w-2xl">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-3 flex-1 max-w-2xl w-full">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <input
@@ -437,7 +537,7 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-[#1A1A2E] p-1 rounded-lg border border-white/5">
+          <div className="flex items-center gap-2 bg-[#1A1A2E] p-1 rounded-lg border border-white/5 self-start lg:self-auto">
             <button
               type="button"
               aria-label="Grid View"
@@ -523,7 +623,7 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
       ) : null}
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
         {localTracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
             <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-4">
@@ -544,7 +644,7 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
             </p>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
             {filteredTracks.map((track) => {
               const title = getTrackTitle(track);
               const tags = track.style_tags ?? [];
@@ -590,8 +690,16 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
                     )}
                   </button>
 
-                  {/* Delete action */}
-                  <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Quick actions */}
+                  <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(track)}
+                      className="p-1 rounded bg-black/50 text-white/70 hover:text-white backdrop-blur-sm transition-colors"
+                      title="Edit track"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(track.id)}
@@ -680,7 +788,7 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
                   <th className="py-3 px-4">Title</th>
                   <th className="py-3 px-4 w-32">Genre</th>
                   <th className="py-3 px-4 w-40">Date</th>
-                  <th className="py-3 px-4 w-16" />
+                  <th className="py-3 px-4 w-24" />
                 </tr>
               </thead>
               <tbody>
@@ -755,20 +863,31 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <button
-                          type="button"
-                          aria-label={`Delete ${title}`}
-                          onClick={() => handleDelete(track.id)}
-                          disabled={isDeleting}
-                          className="p-1.5 rounded hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                          title="Delete"
-                        >
-                          {isDeleting ? (
-                            <MoreVertical className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            aria-label={`Edit ${title}`}
+                            onClick={() => openEditModal(track)}
+                            className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${title}`}
+                            onClick={() => handleDelete(track.id)}
+                            disabled={isDeleting}
+                            className="p-1.5 rounded hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                            title="Delete"
+                          >
+                            {isDeleting ? (
+                              <MoreVertical className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -778,6 +897,97 @@ export function LibraryClient({ tracks }: LibraryClientProps) {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {editingTrack && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
+            role="dialog"
+            aria-modal="true"
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 12 }}
+              className="w-full max-w-md rounded-xl border border-white/10 bg-[#111128] p-5 shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <h2 className="text-lg font-semibold">Edit track</h2>
+                  <p className="text-sm text-white/50">
+                    Update the title and comma-separated tags.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="p-1.5 rounded-lg text-white/50 hover:bg-white/10 hover:text-white"
+                  aria-label="Close edit track dialog"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="track-title"
+                    className="mb-1 block text-sm font-medium text-white/80"
+                  >
+                    Title
+                  </label>
+                  <input
+                    id="track-title"
+                    value={editTitle}
+                    onChange={(event) => setEditTitle(event.target.value)}
+                    maxLength={120}
+                    className="w-full rounded-lg border border-white/10 bg-[#0D0D1A] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED]"
+                    placeholder="Track title"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="track-tags"
+                    className="mb-1 block text-sm font-medium text-white/80"
+                  >
+                    Tags
+                  </label>
+                  <input
+                    id="track-tags"
+                    value={editTags}
+                    onChange={(event) => setEditTags(event.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-[#0D0D1A] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#7C3AED]"
+                    placeholder="Lo-fi, selenium, ambient"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={isSavingEdit}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSavingEdit ? "Saving..." : "Save changes"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

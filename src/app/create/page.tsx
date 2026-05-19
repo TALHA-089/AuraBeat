@@ -567,9 +567,9 @@ export default function CreateMusicPage() {
 
   return (
     <AppLayout>
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden custom-scrollbar">
         {/* ═══ Left Panel — Input Workspace ═══ */}
-        <div className="flex-1 overflow-y-auto p-8 border-r border-white/5 custom-scrollbar">
+        <div className="flex-none xl:flex-1 overflow-visible xl:overflow-y-auto p-4 sm:p-8 border-b xl:border-b-0 xl:border-r border-white/5 custom-scrollbar">
           <div className="max-w-3xl mx-auto space-y-8 pb-20">
             {/* Header with mode toggle */}
             <div className="flex items-center justify-between">
@@ -710,7 +710,7 @@ export default function CreateMusicPage() {
                   </button>
                   {showAdvanced && (
                     <>
-                      <section className="grid grid-cols-2 gap-6">
+                      <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="bg-[#111128] border border-[#1E1E3A] rounded-xl p-6">
                           <h2 className="text-sm font-semibold mb-4 text-white/80">
                             Vocal Gender
@@ -805,7 +805,7 @@ export default function CreateMusicPage() {
                         />
 
                         <div
-                          className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/5 transition-all cursor-pointer group"
+                          className="border-2 border-dashed border-white/10 rounded-xl p-5 sm:p-8 flex flex-col items-center justify-center text-center hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/5 transition-all cursor-pointer group"
                           onDragOver={(event) => event.preventDefault()}
                           onDrop={(event) => handleDrop(event, activeUploadTab)}
                           onClick={() => {
@@ -961,7 +961,7 @@ export default function CreateMusicPage() {
         </div>
 
         {/* ═══ Right Panel — Results ═══ */}
-        <div className="w-[380px] bg-[#0D0D1A] flex flex-col z-10 border-l border-[#1E1E3A] shrink-0">
+        <div className="w-full xl:w-[380px] min-h-[420px] xl:min-h-0 bg-[#0D0D1A] flex flex-col z-10 border-t xl:border-t-0 xl:border-l border-[#1E1E3A] shrink-0">
           <div className="p-4 border-b border-[#1E1E3A] flex items-center justify-between bg-[#111128]/50 shrink-0">
             <h2 className="font-semibold flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#7C3AED]" />

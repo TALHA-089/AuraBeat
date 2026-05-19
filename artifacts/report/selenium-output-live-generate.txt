@@ -1,0 +1,21 @@
+
+> aurabeat@0.1.0 test:selenium
+> node tests/selenium/aurabeatCrud.spec.js
+
+Running Selenium CRUD flow against http://127.0.0.1:3001
+Registering a test user
+Verifying non-admin users cannot call admin APIs
+Updating test profile credits
+Creating a track fixture through Supabase REST
+Inserted test track 926fd85b-ad40-4317-a604-2f6a8425834d
+Uploading reference audio through the create page
+Reading the track in the library and starting playback
+Deleting a track through /api/tracks/:id
+Confirming editor controls render
+Creating an API key
+Verifying /v1/tracks list and detail
+Updating the track through /v1/tracks/:id
+Calling /v1/generate against the configured AI backend
+Deleting the track through /v1/tracks/:id
+Selenium CRUD flow completed successfully
+API key fixture created for the test user

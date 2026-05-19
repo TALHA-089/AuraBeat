@@ -342,6 +342,14 @@ export function ApiPlatformClient({ keys }: ApiPlatformClientProps) {
                     </code>
                   </li>
                   <li className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">
+                      PATCH
+                    </span>
+                    <code className="text-white/70 text-xs">
+                      /v1/tracks/:id
+                    </code>
+                  </li>
+                  <li className="flex items-center gap-2">
                     <span className="text-[10px] font-bold bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
                       DELETE
                     </span>

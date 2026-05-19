@@ -16,6 +16,7 @@ import {
   User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getProfileAdminStatus } from "@/lib/auth/admin";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -45,9 +46,9 @@ export function Sidebar() {
           if (data) {
             setGold(data.gold_balance ?? 0);
           }
-          // Force admin true for demo visibility
-          setIsAdmin(true);
         });
+
+      getProfileAdminStatus(supabase, user.id).then(setIsAdmin);
     });
   }, []);
 
@@ -151,5 +152,46 @@ export function Sidebar() {
         </Link>
       </div>
     </aside>
+  );
+}
+
+export function MobileNav() {
+  const pathname = usePathname();
+  const mobileLabels: Record<(typeof navItems)[number]["href"], string> = {
+    "/dashboard": "Home",
+    "/create": "Music",
+    "/speech": "Speech",
+    "/editor": "Editor",
+    "/library": "Library",
+    "/api-platform": "API",
+    "/profile": "Profile",
+  };
+
+  return (
+    <nav className="md:hidden border-t border-[#1E1E3A] bg-[#0F0F20] px-2 py-2">
+      <div className="grid grid-cols-7 items-center gap-1">
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-label={label}
+              className={[
+                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px] font-medium transition-colors",
+                isActive
+                  ? "bg-[#7C3AED]/15 text-[#C4B5FD]"
+                  : "text-[#A1A1AA] hover:bg-white/[0.04] hover:text-white",
+              ].join(" ")}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="max-w-full truncate">
+                {mobileLabels[href]}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

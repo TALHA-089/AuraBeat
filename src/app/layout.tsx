@@ -10,6 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://aurabeat.com"),
   title: "Aurabeat | AI Music Studio",
   description: "Create professional AI-generated music and speech in seconds. A comprehensive suite for musicians and creators.",
   keywords: ["AI Music", "Music Generation", "Text to Speech", "AI Studio", "Aurabeat"],

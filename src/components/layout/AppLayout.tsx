@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AudioPlayer } from "./AudioPlayer";
-import { Sidebar } from "./Sidebar";
+import { MobileNav, Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ToastViewport } from "@/components/ui/Toast";
 
@@ -21,6 +21,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
       </div>
+      <MobileNav />
       {/* Audio Player — full width below everything */}
       <AudioPlayer />
       <ToastViewport />

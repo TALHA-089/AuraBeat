@@ -20,6 +20,8 @@ type GenerateBody = {
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW = 60000;
 const MAX_REQUESTS_PER_WINDOW = 10;
+const GRADIO_SUBMIT_TIMEOUT_MS = 10000;
+const GRADIO_RESULT_TIMEOUT_MS = 180000;
 
 export async function POST(request: NextRequest) {
   const auth = await authenticateApiKey(request);
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: [optimizedPrompt] }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(GRADIO_SUBMIT_TIMEOUT_MS),
     });
 
     if (!submitRes.ok) {
@@ -112,10 +114,18 @@ export async function POST(request: NextRequest) {
     const eventId = submitJson.event_id;
     if (!eventId) throw new Error("No event_id from Gradio");
 
-    const resultRes = await fetch(
-      `${gradioUrl}/gradio_api/call/predict/${eventId}`,
-      { signal: AbortSignal.timeout(60000) },
-    );
+    let resultRes;
+    try {
+      resultRes = await fetch(
+        `${gradioUrl}/gradio_api/call/predict/${eventId}`,
+        { signal: AbortSignal.timeout(GRADIO_RESULT_TIMEOUT_MS) },
+      );
+    } catch {
+      return NextResponse.json(
+        { error: "AI_GENERATION_TIMEOUT" },
+        { status: 504 },
+      );
+    }
     const resultText = await resultRes.text();
     const dataLines = resultText.split("\n").filter((l) => l.startsWith("data:"));
     const lastDataLine = dataLines[dataLines.length - 1];

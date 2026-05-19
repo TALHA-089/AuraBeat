@@ -1,0 +1,8 @@
+{
+  "status": "exists",
+  "checkedAt": "2026-05-18T01:33:14.909Z",
+  "adminModel": "profiles.plan=Admin fallback",
+  "schemaAppliedByRpc": false,
+  "adminUserId": "3d798da5-ebe7-4463-84e4-ef10dd0eced9",
+  "message": "An admin profile already exists; no new admin was created."
+}

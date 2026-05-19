@@ -138,8 +138,8 @@ The project scope includes:
 | OBJ-03 | Store user profiles, tracks, and API keys | Implemented |
 | OBJ-04 | Upload and play audio files | Implemented |
 | OBJ-05 | Integrate AI music generation through Gradio/MusicGen | Implemented but dependent on live Gradio URL |
-| OBJ-06 | Provide library CRUD operations | Create, Read, Delete implemented; Update partially planned |
-| OBJ-07 | Provide responsive design | Implemented for many views; desktop-first areas still being improved |
+| OBJ-06 | Provide library CRUD operations | Create, Read, Update, and Delete implemented |
+| OBJ-07 | Provide responsive design | Improved for major views; editor remains desktop-oriented |
 | OBJ-08 | Add Selenium automated tests | Implemented |
 | OBJ-09 | Add API platform and public endpoints | Implemented |
 | OBJ-10 | Prepare final report and screenshots | Report prepared; screenshots to be inserted manually |
@@ -161,25 +161,25 @@ The project is mostly implemented as a functional academic MVP. Some items are i
 | Dashboard | Shows profile summary, gold balance, plan, and recent tracks | Implemented |
 | Create Music | Prompt, style, lyrics, reference audio, and generation flow | Implemented |
 | Reference Audio Upload | Uploads audio file to Supabase Storage | Implemented |
-| Library | Shows tracks, search, filter, grid/list view, playback, delete | Implemented |
+| Library | Shows tracks, search, filter, grid/list view, playback, edit, and server-side delete | Implemented |
 | Audio Player | Persistent player with play, pause, progress, repeat, shuffle, volume | Implemented |
 | Music Editor | UI and browser-based audio editing interactions | Implemented as MVP |
 | Create Speech | Browser Web Speech API synthesis | Implemented as supporting feature |
 | Profile | Display name, plan, gold balance, sign out | Implemented |
 | API Platform | API key creation, display, deactivation | Implemented |
-| Public API | Track list, detail, delete, and generate endpoints | Implemented |
-| Admin Dashboard | Demo overview, stats, user update, track delete | Implemented for demo visibility |
+| Public API | Track list, detail, update, delete, and generate endpoints | Implemented |
+| Admin Dashboard | Strictly authorized overview, stats, user update, and track delete | Implemented |
 | Selenium CRUD Test | Automated browser test for major CRUD flow | Implemented and passed |
 
 ## 4.2 Partially Implemented or Planned Improvements
 
 | Item | Current Status | Planned Completion Before Presentation |
 |---|---|---|
-| Full track update endpoint | Track update is not exposed as public `PATCH` endpoint yet | Add `PATCH /v1/tracks/[id]` or authenticated update action |
-| Mobile polish for editor | Editor is desktop-first due to complex waveform interface | Improve mobile overflow and screenshots |
-| Storage cleanup on delete | Track database row is deleted, but storage object cleanup is not fully automated | Add cleanup plan or storage path tracking |
+| Full track update endpoint | Public `PATCH /v1/tracks/[id]` is implemented and tested | Continue polishing UI labels/screenshots |
+| Mobile polish for editor | Editor now supports smaller screens with wrapped controls and horizontal waveform scrolling | Capture responsive screenshots |
+| Storage cleanup on delete | Public API, Library, and Admin deletes share Supabase Storage cleanup helper | Continue monitoring orphan files after demo data cleanup |
 | AI backend reliability | Gradio URL is ephemeral and depends on Colab runtime | Start fresh Gradio URL before demo |
-| Admin authorization | Admin access is visible for demo; strict admin check is commented | Re-enable role-based check if required |
+| Admin authorization | Strict admin checks are enabled with `profiles.is_admin` support and `plan = Admin` fallback until migration is applied | Apply admin DB migration before final deployment |
 | Screenshot collection | Screenshots are not embedded in this Markdown | Insert screenshots manually in Word document |
 
 ---
@@ -377,14 +377,16 @@ The hypertext model describes how users navigate between pages in AuraBeat. The 
 | `/api/generate` | `POST` | Authenticated music generation |
 | `/api/keys` | `POST` | Create API key |
 | `/api/keys?id=...` | `DELETE` | Deactivate API key |
+| `/api/tracks/[id]` | `DELETE` | Authenticated app track delete with storage cleanup |
 | `/api/admin/users` | `PATCH` | Update user plan/gold balance |
 | `/api/admin/tracks?id=...` | `DELETE` | Delete track as admin |
 | `/api/v1/tracks` | `GET` | Public API track list |
 | `/api/v1/tracks/[id]` | `GET` | Public API track detail |
+| `/api/v1/tracks/[id]` | `PATCH` | Public API track update |
 | `/api/v1/tracks/[id]` | `DELETE` | Public API track delete |
 | `/api/v1/generate` | `POST` | Public API generation |
 | `/v1/tracks` | `GET` | Friendly public API proxy route |
-| `/v1/tracks/[id]` | `GET`, `DELETE` | Friendly public API proxy route |
+| `/v1/tracks/[id]` | `GET`, `PATCH`, `DELETE` | Friendly public API proxy route |
 | `/v1/generate` | `POST` | Friendly public API proxy route |
 
 ## 7.5 Main User Navigation Flow
@@ -814,6 +816,16 @@ Assignment 4 requires screenshots that show the responsiveness of the applicatio
 
 This Markdown includes placeholders for screenshots. Screenshots will be inserted manually after the report is converted to Word.
 
+Updated screenshot artifacts have also been captured in:
+
+```text
+artifacts/report/screenshots/
+artifacts/report/screenshot-manifest.json
+artifacts/report/responsive-smoke.json
+```
+
+The responsive smoke manifest records desktop, tablet, and mobile checks with no page-level horizontal overflow detected.
+
 ## 11.2 Responsive Design Approach
 
 AuraBeat uses Tailwind CSS responsive utility classes such as:
@@ -893,6 +905,8 @@ The following screenshot placeholders should be retained in the Word document.
 
 [SCREENSHOT PLACEHOLDER: API Platform mobile/tablet view with responsive cards and table scrolling.]
 
+Captured screenshot files are available in `artifacts/report/screenshots/`. The generated manifest maps each screenshot to its route, viewport size, and overflow result.
+
 ## 11.5 Current Responsive Design Limitations
 
 The main limitation is that the music editor and persistent audio player are naturally complex desktop-style interfaces. They are usable for larger screens but require additional polish for very small mobile screens. This is acceptable for the current MVP because the primary project use case is a desktop AI music studio. However, mobile improvements are planned before final presentation.
@@ -947,15 +961,17 @@ The Selenium test performs the following flow:
 11. Switches to list view.
 12. Finds the created track.
 13. Starts playback.
-14. Opens Editor page.
-15. Verifies editor controls.
-16. Creates an API key.
-17. Calls `/v1/tracks`.
-18. Calls `/v1/tracks/[id]`.
-19. Optionally calls `/v1/generate`.
-20. Deletes the track.
-21. Confirms the deleted track returns `404`.
-22. Cleans up test data.
+14. Creates a second fixture and deletes it through authenticated `DELETE /api/tracks/[id]`.
+15. Opens Editor page.
+16. Verifies editor controls.
+17. Creates an API key.
+18. Calls `/v1/tracks`.
+19. Calls `/v1/tracks/[id]`.
+20. Updates track metadata through `PATCH /v1/tracks/[id]`.
+21. Optionally calls `/v1/generate`.
+22. Deletes the track through `DELETE /v1/tracks/[id]`.
+23. Confirms the deleted track returns `404`.
+24. Cleans up test data.
 
 ## 12.4 Commands Used for Verification
 
@@ -988,6 +1004,7 @@ Reading the track in the library and starting playback
 Confirming editor controls render
 Creating an API key
 Verifying /v1/tracks list and detail
+Updating the track through /v1/tracks/:id
 Skipping /v1/generate. Set SELENIUM_RUN_GENERATE=1 to include the live AI backend.
 Deleting the track through /v1/tracks/:id
 Selenium CRUD flow completed successfully
@@ -1026,9 +1043,9 @@ Selenium CRUD flow completed successfully
 | Create | API Key | Authenticated `/api/keys` call | API key returned | Passed |
 | Read | Track | Library UI and `/v1/tracks` | Track visible | Passed |
 | Read | Track Detail | `/v1/tracks/[id]` | Track detail returned | Passed |
-| Update | Profile | `/api/admin/users` | Credits and plan updated | Passed |
-| Update | Track | Planned `PATCH /v1/tracks/[id]` or save status update | Track metadata updated | Planned |
-| Delete | Track | `/v1/tracks/[id]` DELETE | Track deleted | Passed |
+| Update | Profile | Supabase service-role REST fixture setup | Credits and plan updated | Passed |
+| Update | Track | `PATCH /v1/tracks/[id]` and Library edit dialog | Track metadata updated | Passed |
+| Delete | Track | `/api/tracks/[id]` and `/v1/tracks/[id]` DELETE | Track deleted | Passed |
 
 ## 13.3 Responsive Design Test Cases
 
@@ -1067,23 +1084,23 @@ The project report is being submitted before midnight on 17 May 2026. The team h
 
 | Priority | Task | Reason | Planned Completion |
 |---|---|---|---|
-| High | Capture and insert screenshots | Required by Assignment 4 responsive design section | Before Word submission finalization / hard copy |
-| High | Verify live Gradio URL | Needed for AI generation demo | Before presentation |
-| High | Polish mobile Create page | Responsive design demonstration | Before presentation |
+| Completed | Capture and insert screenshots | Required by Assignment 4 responsive design section | Captured in `artifacts/report/screenshots/` |
+| Completed | Verify live Gradio URL | Needed for AI generation demo | Prediction endpoint returned `200`; live Selenium generation passed |
+| Completed | Polish mobile Create page | Responsive design demonstration | Tablet screenshot captured and responsive smoke passed |
 | Medium | Polish mobile Editor layout | Better presentation quality | Before presentation if time allows |
-| Medium | Add track update endpoint | Complete CRUD coverage | Before presentation if time allows |
-| Medium | Re-enable strict admin authorization | Security improvement | Before presentation if required |
-| Low | Add storage cleanup on delete | Production quality improvement | After viva if not required |
+| Completed | Add track update endpoint | Complete CRUD coverage | Implemented before presentation |
+| Completed | Enable strict admin authorization | Security improvement | Admin page and admin APIs now enforce admin status |
+| Completed | Centralize storage cleanup on delete | Production quality improvement | Shared helper now covers Public API, Library, and Admin deletes |
 
 ## 14.2 Current Risk Management
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Gradio URL expires | Generation demo may fail | Start new Colab/Gradio session before viva |
+| Gradio URL expires | Generation demo may fail | Keep the current Colab/Gradio session awake and rerun health check before viva |
 | Mobile editor is complex | Responsive screenshots may show overflow | Use desktop/tablet screenshots and note editor is desktop-first |
-| Track update endpoint missing | CRUD update for track is partial | Demonstrate profile update and plan track PATCH endpoint |
+| Track update regression | CRUD update now depends on PATCH endpoint and RLS/API ownership checks | Covered by Selenium update assertion |
 | Supabase email confirmation | Selenium registration may require confirmation | Keep email confirmation disabled for local test/demo |
-| Storage cleanup incomplete | Deleted DB rows may leave files | Mention as known limitation and future improvement |
+| Storage cleanup depends on URL shape | Cleanup runs when `audio_url` maps to a Supabase `tracks` bucket object | Store canonical object paths in future if needed |
 
 ---
 
@@ -1093,9 +1110,9 @@ AuraBeat is a modern full-stack AI music generation web application built with N
 
 The project models document the domain entities, navigation structure, and presentation design of the application. The architecture section explains why Next.js and Supabase were selected and how the system is divided into presentation, application, data, AI, and testing layers. The responsive design section documents the current responsive behavior and includes placeholders for screenshots that will be inserted manually in the final Word document.
 
-Testing was performed using Selenium WebDriver and ChromeDriver. The automated test validates registration, profile update, track creation setup, reference audio upload, library reading, playback, editor rendering, API key creation, public API reading, and track deletion. The test passed successfully.
+Testing was performed using Selenium WebDriver and ChromeDriver. The automated test validates registration, profile update, track creation setup, reference audio upload, library reading, playback, editor rendering, API key creation, public API reading, public API metadata update, and track deletion. The test passed successfully.
 
-Some features are still being polished before the final viva, especially mobile layout refinement, screenshot collection, live Gradio verification, and optional full track update support. However, the current project is functional as an academic MVP and satisfies the core requirements of Assignment 4: project models, architecture/framework explanation, responsive design documentation, and test cases.
+Some features are still being polished before the final viva, especially applying the final admin database migration. Strict admin authorization, screenshot collection, responsive smoke testing, shared delete storage cleanup, and live Gradio generation verification have been completed. The current project is functional as an academic MVP and satisfies the core requirements of Assignment 4: project models, architecture/framework explanation, responsive design documentation, and test cases.
 
 ---
 
@@ -1134,6 +1151,7 @@ Some features are still being polished before the final viva, especially mobile 
 | `src/lib/supabase/server.ts` | Server Supabase client |
 | `src/lib/supabase/admin.ts` | Admin/service Supabase client |
 | `src/lib/auth/apiKey.ts` | API key authentication helper |
+| `src/lib/audio/storageCleanup.ts` | Shared Supabase Storage cleanup helper |
 | `tests/selenium/aurabeatCrud.spec.js` | Selenium CRUD test |
 
 ## 16.2 Important API Files
@@ -1142,10 +1160,11 @@ Some features are still being polished before the final viva, especially mobile 
 |---|---|
 | `src/app/api/generate/route.ts` | Authenticated generation endpoint |
 | `src/app/api/keys/route.ts` | API key create/deactivate endpoint |
+| `src/app/api/tracks/[id]/route.ts` | Authenticated app track delete endpoint |
 | `src/app/api/admin/users/route.ts` | Admin user update endpoint |
 | `src/app/api/admin/tracks/route.ts` | Admin track delete endpoint |
 | `src/app/api/v1/tracks/route.ts` | Public track list endpoint |
-| `src/app/api/v1/tracks/[id]/route.ts` | Public track detail/delete endpoint |
+| `src/app/api/v1/tracks/[id]/route.ts` | Public track detail/update/delete endpoint |
 | `src/app/api/v1/generate/route.ts` | Public API generation endpoint |
 | `src/app/v1/tracks/route.ts` | Friendly route re-export |
 | `src/app/v1/tracks/[id]/route.ts` | Friendly route re-export |
@@ -1188,7 +1207,7 @@ SELENIUM_BASE_URL=http://127.0.0.1:3001 npm run test:selenium
 ## 17.5 Optional Live AI Generation Test
 
 ```bash
-SELENIUM_RUN_GENERATE=1 SELENIUM_BASE_URL=http://127.0.0.1:3001 npm run test:selenium
+SELENIUM_RUN_GENERATE=1 SELENIUM_GENERATE_TIMEOUT_MS=240000 SELENIUM_BASE_URL=http://127.0.0.1:3001 npm run test:selenium
 ```
 
 ---
@@ -1197,28 +1216,28 @@ SELENIUM_RUN_GENERATE=1 SELENIUM_BASE_URL=http://127.0.0.1:3001 npm run test:sel
 
 The following screenshots should be added manually to the Word document after Claude generates it:
 
-| Screenshot No. | Screenshot Description | Required For |
-|---|---|---|
-| SS-01 | Login page desktop | Presentation / Responsive Design |
-| SS-02 | Login page mobile | Responsive Design |
-| SS-03 | Register page desktop | Presentation Model |
-| SS-04 | Dashboard desktop with sidebar | Presentation / Responsive Design |
-| SS-05 | Dashboard tablet or mobile | Responsive Design |
-| SS-06 | Create Music desktop | Presentation Model |
-| SS-07 | Create Music advanced upload section | Testing / Presentation |
-| SS-08 | Create Music mobile/tablet | Responsive Design |
-| SS-09 | Library grid view desktop | Presentation Model |
-| SS-10 | Library list view with test track | Testing |
-| SS-11 | Library mobile/tablet | Responsive Design |
-| SS-12 | Audio player active / Now playing | Testing |
-| SS-13 | Music Editor desktop | Presentation Model |
-| SS-14 | Music Editor smaller viewport | Responsive Design |
-| SS-15 | Profile page | Presentation Model |
-| SS-16 | API Platform page | API / Presentation |
-| SS-17 | API key creation modal | Testing |
-| SS-18 | Admin dashboard | Admin / Presentation |
-| SS-19 | Selenium terminal output | Testing evidence |
-| SS-20 | Next.js build/lint output | Testing evidence |
+| Screenshot No. | Screenshot Description | Required For | Captured Artifact |
+|---|---|---|---|
+| SS-01 | Login page desktop | Presentation / Responsive Design | `artifacts/report/screenshots/01-login-desktop.png` |
+| SS-02 | Login page mobile | Responsive Design | `artifacts/report/screenshots/02-login-mobile.png` |
+| SS-03 | Register page desktop | Presentation Model | `artifacts/report/screenshots/03-register-desktop.png` |
+| SS-04 | Dashboard desktop with sidebar | Presentation / Responsive Design | `artifacts/report/screenshots/04-dashboard-desktop.png` |
+| SS-05 | Dashboard tablet or mobile | Responsive Design | `artifacts/report/screenshots/04-dashboard-tablet.png`; `artifacts/report/screenshots/04-dashboard-mobile.png` |
+| SS-06 | Create Music desktop | Presentation Model | `artifacts/report/screenshots/05-create-desktop.png` |
+| SS-07 | Create Music advanced upload section | Testing / Presentation | `artifacts/report/screenshots/06-create-advanced-upload.png` |
+| SS-08 | Create Music mobile/tablet | Responsive Design | `artifacts/report/screenshots/05-create-tablet.png` |
+| SS-09 | Library grid view desktop | Presentation Model | `artifacts/report/screenshots/07-library-grid.png` |
+| SS-10 | Library list view with test track | Testing | `artifacts/report/screenshots/08-library-list.png` |
+| SS-11 | Library mobile/tablet | Responsive Design | `artifacts/report/screenshots/07-library-tablet.png`; `artifacts/report/screenshots/07-library-mobile.png` |
+| SS-12 | Audio player active / Now playing | Testing | `artifacts/report/screenshots/09-audio-player-active.png` |
+| SS-13 | Music Editor desktop | Presentation Model | `artifacts/report/screenshots/11-editor-desktop.png` |
+| SS-14 | Music Editor smaller viewport | Responsive Design | `artifacts/report/screenshots/12-editor-tablet.png` |
+| SS-15 | Profile page | Presentation Model | `artifacts/report/screenshots/13-profile.png` |
+| SS-16 | API Platform page | API / Presentation | `artifacts/report/screenshots/14-api-platform.png`; `artifacts/report/screenshots/14-api-platform-tablet.png` |
+| SS-17 | API key creation modal | Testing | `artifacts/report/screenshots/15-api-key-modal.png` |
+| SS-18 | Admin dashboard | Admin / Presentation | `artifacts/report/screenshots/16-admin-dashboard.png` |
+| SS-19 | Selenium terminal output | Testing evidence | `artifacts/report/screenshots/17-verification-output.png`; `artifacts/report/selenium-output.txt` |
+| SS-20 | Next.js build/lint output | Testing evidence | `artifacts/report/screenshots/17-verification-output.png`; `artifacts/report/lint-output.txt`; `artifacts/report/build-output.txt` |
 
 ---
 

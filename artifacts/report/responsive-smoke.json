@@ -1,0 +1,149 @@
+[
+  {
+    "viewport": "desktop",
+    "route": "/dashboard",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "desktop",
+    "route": "/create",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "desktop",
+    "route": "/library",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "desktop",
+    "route": "/editor",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "desktop",
+    "route": "/profile",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "desktop",
+    "route": "/api-platform",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "desktop",
+    "route": "/admin",
+    "width": 1440,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/dashboard",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/create",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/library",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/editor",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/profile",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/api-platform",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "tablet",
+    "route": "/admin",
+    "width": 768,
+    "height": 761,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/dashboard",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/create",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/library",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/editor",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/profile",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/api-platform",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  },
+  {
+    "viewport": "mobile",
+    "route": "/admin",
+    "width": 500,
+    "height": 705,
+    "horizontalOverflow": false
+  }
+]
